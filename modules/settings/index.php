@@ -125,7 +125,7 @@ include __DIR__ . '/../../includes/header.php';
                     </li>
                     <li class="nav-item">
                         <button class="nav-link py-2 px-3 small fw-bold" data-bs-toggle="pill" data-bs-target="#tab-backup">
-                            <i data-lucide="database" style="width: 14px; height: 14px;"></i> Database, Backup & Reset
+                            <i data-lucide="database" style="width: 14px; height: 14px;"></i> Database Backup Instructions
                         </button>
                     </li>
                 </ul>
@@ -259,44 +259,18 @@ include __DIR__ . '/../../includes/header.php';
                         </div>
                     </div>
 
-                    <!-- TAB 4: DATABASE BACKUP & RESET -->
+                    <!-- TAB 4: DATABASE BACKUP INSTRUCTIONS -->
                     <div class="tab-pane fade" id="tab-backup">
-                        <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
-                            <div>
-                                <h6 class="fw-bold text-dark fs-6 mb-1">Database Management & Reset Tool</h6>
-                                <p class="small text-muted mb-0">Reset operational data, perform factory wipe, or create MySQL database dumps</p>
-                            </div>
-                            <a href="<?= getBaseUrl() ?>database/reset.php" class="btn btn-primary" target="_blank">
-                                <i data-lucide="refresh-cw"></i> Open Database Reset Tool
-                            </a>
-                        </div>
-
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-6">
-                                <div class="p-3 bg-light rounded-3 border h-100">
-                                    <div class="fw-bold text-dark small mb-1">1. Reset WITHOUT Users (Keep Logins)</div>
-                                    <p class="small text-muted mb-2">Clears all projects, tasks, clients, enquiries, invoices, and payments, but preserves all user accounts and credentials.</p>
-                                    <pre class="bg-dark text-white p-2 rounded small mb-0"><code>php database/reset.php --without-users</code></pre>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="p-3 bg-light rounded-3 border h-100">
-                                    <div class="fw-bold text-dark small mb-1">2. Reset WITH Users (Full Factory Reset)</div>
-                                    <p class="small text-muted mb-2">Wipes the entire database back to default factory state. Restores default login: <code>admin</code> / <code>admin123</code>.</p>
-                                    <pre class="bg-dark text-white p-2 rounded small mb-0"><code>php database/reset.php --with-users</code></pre>
-                                </div>
-                            </div>
-                        </div>
-
+                        <h6 class="fw-bold text-dark fs-6 mb-3">Database Backup & Recovery Instructions</h6>
                         <div class="p-3 bg-light rounded-3 border mb-3">
-                            <h6 class="fw-bold small text-dark mb-2">Automated MySQL Dump Backup:</h6>
-                            <p class="small text-muted mb-2">To export a full database backup with schema and data:</p>
-                            <pre class="bg-dark text-white p-3 rounded small mb-0"><code>mysqldump -u root -p pondy_crm > "C:\xampp\htdocs\pondy-it-solutions-CRM\database\backup_<?= date('Y_m_d') ?>.sql"</code></pre>
+                            <h6 class="fw-bold small text-dark mb-2">Automated MySQL Dump Command (via CLI / XAMPP):</h6>
+                            <p class="small text-muted mb-2">To export a full database backup with schema and data, open your terminal / command prompt and run:</p>
+                            <pre class="bg-dark text-white p-3 rounded small"><code>mysqldump -u root -p pondy_crm > "F:\pondy-it-solutions-CRM\database\backup_<?= date('Y_m_d') ?>.sql"</code></pre>
                         </div>
 
                         <div class="p-3 bg-light rounded-3 border">
                             <h6 class="fw-bold small text-dark mb-2">Restoring from Backup:</h6>
-                            <pre class="bg-dark text-white p-3 rounded small mb-0"><code>mysql -u root -p pondy_crm < "C:\xampp\htdocs\pondy-it-solutions-CRM\database\backup_<?= date('Y_m_d') ?>.sql"</code></pre>
+                            <pre class="bg-dark text-white p-3 rounded small"><code>mysql -u root -p pondy_crm < "F:\pondy-it-solutions-CRM\database\backup_<?= date('Y_m_d') ?>.sql"</code></pre>
                         </div>
                     </div>
 
