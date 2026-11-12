@@ -1,0 +1,16 @@
+# PONDY IT SOLUTIONS - Apache Configuration
+Options -Indexes
+
+# Protect sensitive config files
+<FilesMatch "^(database\.php|app\.php)$">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>
+
+# Allow execution of PHP scripts
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+</IfModule>
+

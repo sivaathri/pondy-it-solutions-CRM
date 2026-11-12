@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 180" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.9">
+  <!-- Ground Waves / Shoreline -->
+  <path d="M 0 165 C 50 160, 100 170, 150 165 C 200 160, 250 170, 300 165 C 350 160, 400 168, 400 165" opacity="0.6"/>
+  <path d="M 0 175 C 60 170, 120 178, 180 173 C 240 168, 300 178, 400 172" opacity="0.4"/>
+
+  <!-- Left Palm Trees -->
+  <path d="M 40 165 Q 45 130 35 95" stroke-width="3"/>
+  <!-- Palm fronds left tree -->
+  <path d="M 35 95 Q 15 80 5 95" stroke-width="2"/>
+  <path d="M 35 95 Q 10 65 0 75" stroke-width="2"/>
+  <path d="M 35 95 Q 35 60 40 70" stroke-width="2"/>
+  <path d="M 35 95 Q 55 70 65 85" stroke-width="2"/>
+  <path d="M 35 95 Q 60 95 65 110" stroke-width="2"/>
+
+  <!-- Smaller left palm tree -->
+  <path d="M 70 165 Q 65 140 75 115" stroke-width="2.5"/>
+  <path d="M 75 115 Q 55 105 45 115"/>
+  <path d="M 75 115 Q 65 95 60 102"/>
+  <path d="M 75 115 Q 85 95 90 102"/>
+  <path d="M 75 115 Q 95 110 100 120"/>
+
+  <!-- Historic Pondicherry Lighthouse Tower (Center) -->
+  <!-- Base platform -->
+  <rect x="140" y="145" width="120" height="20" rx="3" stroke-width="2.5" fill="#FFFFFF" fill-opacity="0.05"/>
+  <rect x="155" y="132" width="90" height="13" rx="2" stroke-width="2"/>
+  
+  <!-- Main Tapered Tower Body -->
+  <polygon points="165,132 175,45 225,45 235,132" stroke-width="2.5" fill="#FFFFFF" fill-opacity="0.08"/>
+  
+  <!-- Tower Windows / Arches -->
+  <path d="M 193 115 A 7 7 0 0 1 207 115 V 125 H 193 Z" stroke-width="1.8"/>
+  <path d="M 194 85 A 6 6 0 0 1 206 85 V 93 H 194 Z" stroke-width="1.8"/>
+  <path d="M 195 60 A 5 5 0 0 1 205 60 V 67 H 195 Z" stroke-width="1.8"/>
+
+  <!-- Tower Cornice & Gallery Balcony -->
+  <line x1="170" y1="45" x2="230" y2="45" stroke-width="3"/>
+  <line x1="168" y1="36" x2="232" y2="36" stroke-width="2.5"/>
+  <!-- Balcony railing verticals -->
+  <line x1="172" y1="45" x2="172" y2="36" stroke-width="1.5"/>
+  <line x1="180" y1="45" x2="180" y2="36" stroke-width="1.5"/>
+  <line x1="188" y1="45" x2="188" y2="36" stroke-width="1.5"/>
+  <line x1="196" y1="45" x2="196" y2="36" stroke-width="1.5"/>
+  <line x1="204" y1="45" x2="204" y2="36" stroke-width="1.5"/>
+  <line x1="212" y1="45" x2="212" y2="36" stroke-width="1.5"/>
+  <line x1="220" y1="45" x2="220" y2="36" stroke-width="1.5"/>
+  <line x1="228" y1="45" x2="228" y2="36" stroke-width="1.5"/>
+
+  <!-- Lantern Room -->
+  <rect x="180" y="18" width="40" height="18" stroke-width="2" fill="#FFFFFF" fill-opacity="0.15"/>
+  <line x1="190" y1="18" x2="190" y2="36" stroke-width="1.5"/>
+  <line x1="200" y1="18" x2="200" y2="36" stroke-width="1.5"/>
+  <line x1="210" y1="18" x2="210" y2="36" stroke-width="1.5"/>
+
+  <!-- Dome Top & Spire / Weather Vane -->
+  <path d="M 178 18 Q 200 6 222 18 Z" stroke-width="2.2" fill="#FFFFFF" fill-opacity="0.2"/>
+  <line x1="200" y1="6" x2="200" y2="0" stroke-width="2"/>
+  <circle cx="200" cy="0" r="2" stroke-width="1.5" fill="#FFFFFF"/>
+
+  <!-- Light Beams Sweeping -->
+  <line x1="180" y1="26" x2="120" y2="10" stroke-dasharray="4 3" stroke-width="1.5" opacity="0.7"/>
+  <line x1="180" y1="28" x2="90" y2="28" stroke-dasharray="4 3" stroke-width="1.5" opacity="0.5"/>
+  <line x1="220" y1="26" x2="280" y2="10" stroke-dasharray="4 3" stroke-width="1.5" opacity="0.7"/>
+  <line x1="220" y1="28" x2="310" y2="28" stroke-dasharray="4 3" stroke-width="1.5" opacity="0.5"/>
+
+  <!-- Right Palm Trees -->
+  <path d="M 330 165 Q 320 130 335 90" stroke-width="3"/>
+  <path d="M 335 90 Q 315 75 305 85" stroke-width="2"/>
+  <path d="M 335 90 Q 320 60 330 55" stroke-width="2"/>
+  <path d="M 335 90 Q 350 60 360 70" stroke-width="2"/>
+  <path d="M 335 90 Q 365 85 375 95" stroke-width="2"/>
+  <path d="M 335 90 Q 360 105 370 120" stroke-width="2"/>
+
+  <!-- Colonnade arches at base -->
+  <path d="M 160 145 A 6 6 0 0 1 172 145" stroke-width="1.5"/>
+  <path d="M 180 145 A 6 6 0 0 1 192 145" stroke-width="1.5"/>
+  <path d="M 208 145 A 6 6 0 0 1 220 145" stroke-width="1.5"/>
+  <path d="M 228 145 A 6 6 0 0 1 240 145" stroke-width="1.5"/>
+</svg>
+
