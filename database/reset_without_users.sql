@@ -63,3 +63,4 @@ UNION ALL
 SELECT 'tasks', COUNT(*) FROM tasks
 UNION ALL
 SELECT 'invoices', COUNT(*) FROM invoices;
+

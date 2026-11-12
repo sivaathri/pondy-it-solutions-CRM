@@ -134,3 +134,4 @@ UNION ALL
 SELECT 'projects', COUNT(*) FROM projects
 UNION ALL
 SELECT 'clients', COUNT(*) FROM clients;
+
