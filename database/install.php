@@ -73,6 +73,9 @@ if ($isCli) {
 <head>
     <meta charset="UTF-8">
     <title>Database Setup | <?= APP_NAME ?></title>
+    <!-- Favicon & Touch Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="<?= getBaseUrl() ?>assets/images/favicon-32x32.png">
+    <link rel="shortcut icon" href="<?= getBaseUrl() ?>favicon.ico">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="<?= getBaseUrl() ?>assets/css/style.css">
 </head>

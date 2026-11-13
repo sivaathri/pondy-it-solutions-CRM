@@ -31,6 +31,12 @@ if ($db && $currentUser) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e($pageTitle) ?> | <?= APP_NAME ?></title>
     
+    <!-- Favicon & Touch Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="<?= getBaseUrl() ?>assets/images/favicon-32x32.png?v=<?= @filemtime(__DIR__ . '/../assets/images/favicon-32x32.png') ?: time() ?>">
+    <link rel="icon" type="image/png" sizes="16x16" href="<?= getBaseUrl() ?>assets/images/favicon-16x16.png?v=<?= @filemtime(__DIR__ . '/../assets/images/favicon-16x16.png') ?: time() ?>">
+    <link rel="shortcut icon" href="<?= getBaseUrl() ?>favicon.ico?v=<?= @filemtime(__DIR__ . '/../favicon.ico') ?: time() ?>">
+    <link rel="apple-touch-icon" href="<?= getBaseUrl() ?>assets/images/favicon-192x192.png">
+
     <!-- Google Fonts: Inter & Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
