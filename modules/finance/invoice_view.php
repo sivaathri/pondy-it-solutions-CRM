@@ -68,7 +68,7 @@ include __DIR__ . '/../../includes/header.php';
                         <i data-lucide="credit-card" style="width: 14px; height: 14px;"></i> Record Payment
                     </a>
                 <?php endif; ?>
-                <button onclick="window.print()" class="btn btn-sm btn-primary-navy">
+                <button type="button" onclick="printInvoiceDoc()" class="btn btn-sm btn-primary-navy" style="background: #2563EB;">
                     <i data-lucide="printer" style="width: 14px; height: 14px;"></i> Print / PDF
                 </button>
             </div>
@@ -123,54 +123,65 @@ include __DIR__ . '/../../includes/header.php';
 
             <!-- Invoice Items Table -->
             <div class="table-responsive mb-4">
-                <table class="table table-bordered align-middle">
-                    <thead class="table-light small">
-                        <tr>
-                            <th style="width: 5%;">#</th>
-                            <th style="width: 60%;">Description</th>
-                            <th style="width: 10%;" class="text-center">Qty</th>
-                            <th style="width: 25%;" class="text-end">Amount (<?= CURRENCY_SYMBOL ?>)</th>
+                <table class="table align-middle mb-0" style="border-collapse: separate; border-spacing: 0;">
+                    <thead>
+                        <tr style="background-color: #F8FAFC; border-bottom: 2px solid #E2E8F0;">
+                            <th class="py-3 px-3 text-secondary text-uppercase" style="width: 6%; font-size: 0.75rem; letter-spacing: 0.05em;">#</th>
+                            <th class="py-3 px-3 text-secondary text-uppercase" style="width: 50%; font-size: 0.75rem; letter-spacing: 0.05em;">Item & Description</th>
+                            <th class="py-3 px-3 text-secondary text-uppercase text-center" style="width: 12%; font-size: 0.75rem; letter-spacing: 0.05em;">Qty</th>
+                            <th class="py-3 px-3 text-secondary text-uppercase text-end" style="width: 16%; font-size: 0.75rem; letter-spacing: 0.05em;">Unit Price (<?= CURRENCY_SYMBOL ?>)</th>
+                            <th class="py-3 px-3 text-secondary text-uppercase text-end" style="width: 16%; font-size: 0.75rem; letter-spacing: 0.05em;">Total (<?= CURRENCY_SYMBOL ?>)</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($invoiceItems as $idx => $it): ?>
-                            <tr>
-                                <td class="text-secondary small"><?= $idx + 1 ?></td>
-                                <td class="fw-semibold text-dark small"><?= e($it['description']) ?></td>
-                                <td class="text-center small"><?= (float)$it['quantity'] ?></td>
-                                <td class="text-end fw-semibold small"><?= formatCurrency($it['total'], false) ?></td>
+                            <tr style="border-bottom: 1px solid #F1F5F9;">
+                                <td class="py-3 px-3 text-muted small"><?= $idx + 1 ?></td>
+                                <td class="py-3 px-3">
+                                    <div class="fw-semibold text-dark"><?= e($it['description']) ?></div>
+                                </td>
+                                <td class="py-3 px-3 text-center text-secondary small"><?= (float)$it['quantity'] ?></td>
+                                <td class="py-3 px-3 text-end text-secondary small"><?= formatCurrency($it['unit_price'], false) ?></td>
+                                <td class="py-3 px-3 text-end fw-semibold text-dark"><?= formatCurrency($it['total'], false) ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
-                    <tfoot class="small">
-                        <tr>
-                            <td colspan="3" class="text-end text-muted fw-semibold">Subtotal:</td>
-                            <td class="text-end fw-semibold"><?= formatCurrency($invoice['subtotal']) ?></td>
-                        </tr>
-                        <?php if ($invoice['discount_amount'] > 0): ?>
-                            <tr>
-                                <td colspan="3" class="text-end text-muted">Discount:</td>
-                                <td class="text-end text-danger">- <?= formatCurrency($invoice['discount_amount']) ?></td>
-                            </tr>
-                        <?php endif; ?>
-                        <tr>
-                            <td colspan="3" class="text-end text-muted">GST Tax (18%):</td>
-                            <td class="text-end"><?= formatCurrency($invoice['tax_amount']) ?></td>
-                        </tr>
-                        <tr class="table-light fs-6">
-                            <td colspan="3" class="text-end fw-bold text-dark">Grand Total:</td>
-                            <td class="text-end fw-bold" style="color: #092B50;"><?= formatCurrency($invoice['grand_total']) ?></td>
-                        </tr>
-                        <tr>
-                            <td colspan="3" class="text-end text-success fw-bold">Amount Paid:</td>
-                            <td class="text-end text-success fw-bold"><?= formatCurrency($invoice['paid_amount']) ?></td>
-                        </tr>
-                        <tr class="fs-6">
-                            <td colspan="3" class="text-end text-danger fw-bold">Balance Due:</td>
-                            <td class="text-end text-danger fw-bold"><?= formatCurrency($invoice['balance_amount']) ?></td>
-                        </tr>
-                    </tfoot>
                 </table>
+            </div>
+
+            <!-- Financial Calculations Summary Card -->
+            <div class="row justify-content-end mb-4">
+                <div class="col-md-5 col-sm-7">
+                    <div class="p-3 bg-light rounded-3 border">
+                        <div class="d-flex justify-content-between mb-2 small">
+                            <span class="text-muted" style="white-space: nowrap;">Subtotal:</span>
+                            <span class="fw-semibold text-dark" style="white-space: nowrap;"><?= formatCurrency($invoice['subtotal']) ?></span>
+                        </div>
+                        <?php if ($invoice['discount_amount'] > 0): ?>
+                            <div class="d-flex justify-content-between mb-2 small text-danger">
+                                <span style="white-space: nowrap;">Discount:</span>
+                                <span class="fw-semibold" style="white-space: nowrap;">- <?= formatCurrency($invoice['discount_amount']) ?></span>
+                            </div>
+                        <?php endif; ?>
+                        <div class="d-flex justify-content-between mb-2 small">
+                            <span class="text-muted" style="white-space: nowrap;">GST Tax (18%):</span>
+                            <span class="fw-semibold text-dark" style="white-space: nowrap;"><?= formatCurrency($invoice['tax_amount']) ?></span>
+                        </div>
+                        <hr class="my-2 border-secondary-subtle">
+                        <div class="d-flex justify-content-between align-items-center mb-2 fs-5 fw-bold text-dark">
+                            <span style="white-space: nowrap;">Grand Total:</span>
+                            <span style="color: #092B50; white-space: nowrap;"><?= formatCurrency($invoice['grand_total']) ?></span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2 small text-success fw-bold">
+                            <span style="white-space: nowrap;">Amount Paid:</span>
+                            <span style="white-space: nowrap;"><?= formatCurrency($invoice['paid_amount']) ?></span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center pt-2 mt-1 border-top fs-6 fw-bold <?= $invoice['balance_amount'] > 0 ? 'text-danger' : 'text-success' ?>">
+                            <span style="white-space: nowrap;">Balance Due:</span>
+                            <span style="white-space: nowrap;"><?= formatCurrency($invoice['balance_amount']) ?></span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Bank & Remittance Information -->
@@ -199,6 +210,64 @@ include __DIR__ . '/../../includes/header.php';
         </div>
     </div>
 </main>
+
+<div id="printOnlyContainer"></div>
+
+<style>
+#printOnlyContainer {
+    display: none;
+}
+
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 10mm 15mm;
+    }
+    html, body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    }
+    body > *:not(#printOnlyContainer) {
+        display: none !important;
+    }
+    #printOnlyContainer {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: #ffffff !important;
+    }
+    #printOnlyContainer .card {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+    }
+    #printOnlyContainer * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+}
+</style>
+
+<script>
+function printInvoiceDoc() {
+    let printContainer = document.getElementById('printOnlyContainer');
+    if (!printContainer) {
+        printContainer = document.createElement('div');
+        printContainer.id = 'printOnlyContainer';
+        document.body.appendChild(printContainer);
+    }
+    const printableArea = document.getElementById('printableInvoice');
+    if (printableArea) {
+        printContainer.innerHTML = printableArea.innerHTML;
+        window.print();
+    }
+}
+</script>
 
 <?php include __DIR__ . '/../../includes/footer.php'; ?>
 

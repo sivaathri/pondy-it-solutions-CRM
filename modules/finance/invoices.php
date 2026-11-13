@@ -171,9 +171,9 @@ include __DIR__ . '/../../includes/header.php';
                                     </td>
                                     <td class="small text-secondary"><?= formatDate($inv['invoice_date']) ?></td>
                                     <td class="small text-secondary"><?= formatDate($inv['due_date']) ?></td>
-                                    <td class="small fw-bold text-dark"><?= formatCurrency($inv['grand_total']) ?></td>
-                                    <td class="small fw-semibold text-success"><?= formatCurrency($inv['paid_amount']) ?></td>
-                                    <td class="small fw-bold <?= $inv['balance_amount'] > 0 ? 'text-danger' : 'text-muted' ?>">
+                                    <td class="small fw-bold text-dark" style="white-space: nowrap;"><?= formatCurrency($inv['grand_total']) ?></td>
+                                    <td class="small fw-semibold text-success" style="white-space: nowrap;"><?= formatCurrency($inv['paid_amount']) ?></td>
+                                    <td class="small fw-bold <?= $inv['balance_amount'] > 0 ? 'text-danger' : 'text-muted' ?>" style="white-space: nowrap;">
                                         <?= formatCurrency($inv['balance_amount']) ?>
                                     </td>
                                     <td><?= renderStatusBadge($inv['status']) ?></td>

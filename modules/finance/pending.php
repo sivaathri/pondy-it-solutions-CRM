@@ -90,8 +90,8 @@ include __DIR__ . '/../../includes/header.php';
                             <th>Aging</th>
                             <th>Invoiced</th>
                             <th>Paid</th>
-                            <th>Balance Due</th>
-                            <th class="text-end">Action</th>
+                            <th style="white-space: nowrap;">Balance Due</th>
+                            <th class="text-end" style="white-space: nowrap;">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -124,9 +124,9 @@ include __DIR__ . '/../../includes/header.php';
                                             </span>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="small fw-semibold text-dark"><?= formatCurrency($inv['grand_total']) ?></td>
-                                    <td class="small text-success"><?= formatCurrency($inv['paid_amount']) ?></td>
-                                    <td class="small fw-bold text-danger"><?= formatCurrency($inv['balance_amount']) ?></td>
+                                    <td class="small fw-semibold text-dark" style="white-space: nowrap;"><?= formatCurrency($inv['grand_total']) ?></td>
+                                    <td class="small text-success" style="white-space: nowrap;"><?= formatCurrency($inv['paid_amount']) ?></td>
+                                    <td class="small fw-bold text-danger" style="white-space: nowrap;"><?= formatCurrency($inv['balance_amount']) ?></td>
                                     <td class="text-end">
                                         <a href="payments.php?invoice_id=<?= $inv['id'] ?>" class="btn btn-sm btn-gold">
                                             <i data-lucide="credit-card" style="width: 13px; height: 13px;"></i> Record Payment
