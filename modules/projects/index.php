@@ -55,14 +55,16 @@ $whereClause = implode(" AND ", $where);
 
 // Summary counts
 $totalProjects = 0;
-$activeCount = 0;
+$inProgressCount = 0;
+$testingCount = 0;
 $planningCount = 0;
 $completedCount = 0;
 $totalBudget = 0;
 
 try {
-    $totalProjects = (int)$db->query("SELECT COUNT(*) FROM projects")->fetchColumn();
-    $activeCount = (int)$db->query("SELECT COUNT(*) FROM projects WHERE status IN ('In Progress', 'Testing')")->fetchColumn();
+    $totalProjects = (int)$db->query("SELECT COUNT(*) FROM projects WHERE status != 'Cancelled'")->fetchColumn();
+    $inProgressCount = (int)$db->query("SELECT COUNT(*) FROM projects WHERE status = 'In Progress'")->fetchColumn();
+    $testingCount = (int)$db->query("SELECT COUNT(*) FROM projects WHERE status = 'Testing'")->fetchColumn();
     $planningCount = (int)$db->query("SELECT COUNT(*) FROM projects WHERE status = 'Planning'")->fetchColumn();
     $completedCount = (int)$db->query("SELECT COUNT(*) FROM projects WHERE status = 'Completed'")->fetchColumn();
     $totalBudget = (float)$db->query("SELECT COALESCE(SUM(budget), 0) FROM projects WHERE status != 'Cancelled'")->fetchColumn();
@@ -131,29 +133,39 @@ include __DIR__ . '/../../includes/header.php';
         <div class="content-card mb-4">
             <div class="content-card-body p-3">
                 <div class="row g-2 align-items-center">
-                    <div class="col-md-5">
+                    <div class="col-lg-4 col-md-12">
                         <form method="GET" action="index.php" class="d-flex gap-2">
-                            <input type="text" name="search" class="form-control form-control-sm" placeholder="Search by project name, code, client..." value="<?= e($search) ?>">
+                            <input type="text" name="search" class="form-control form-control-sm" placeholder="Search by project name, code, client..." value="<?= e($search) ?>" style="border-radius: 12px;">
                             <?php if (!empty($statusFilter)): ?>
                                 <input type="hidden" name="status" value="<?= e($statusFilter) ?>">
                             <?php endif; ?>
-                            <button type="submit" class="btn btn-sm btn-primary-navy px-3"><i data-lucide="search" style="width: 14px; height: 14px;"></i></button>
+                            <button type="submit" class="btn btn-sm btn-primary-navy px-3" style="border-radius: 12px;"><i data-lucide="search" style="width: 14px; height: 14px;"></i></button>
                             <?php if (!empty($search) || !empty($statusFilter)): ?>
-                                <a href="index.php" class="btn btn-sm btn-light border" title="Reset Filters"><i data-lucide="x" style="width: 14px; height: 14px;"></i></a>
+                                <a href="index.php" class="btn btn-sm btn-light border" style="border-radius: 12px;" title="Reset Filters"><i data-lucide="x" style="width: 14px; height: 14px;"></i></a>
                             <?php endif; ?>
                         </form>
                     </div>
-                    <div class="col-md-4">
-                        <div class="d-flex gap-1 flex-wrap">
-                            <a href="index.php" class="btn btn-sm <?= empty($statusFilter) ? 'btn-dark' : 'btn-light border' ?>">All</a>
-                            <a href="index.php?status=In+Progress" class="btn btn-sm <?= $statusFilter === 'In Progress' ? 'btn-dark' : 'btn-light border' ?>">In Progress</a>
-                            <a href="index.php?status=Testing" class="btn btn-sm <?= $statusFilter === 'Testing' ? 'btn-dark' : 'btn-light border' ?>">Testing</a>
-                            <a href="index.php?status=Planning" class="btn btn-sm <?= $statusFilter === 'Planning' ? 'btn-dark' : 'btn-light border' ?>">Planning</a>
-                            <a href="index.php?status=Completed" class="btn btn-sm <?= $statusFilter === 'Completed' ? 'btn-dark' : 'btn-light border' ?>">Completed</a>
+                    <div class="col-lg-6 col-md-8">
+                        <div class="status-filter-group">
+                            <a href="index.php" class="status-filter-btn <?= empty($statusFilter) ? 'active' : '' ?>">
+                                All <span class="count-pill"><?= $totalProjects ?></span>
+                            </a>
+                            <a href="index.php?status=In+Progress" class="status-filter-btn filter-in-progress <?= $statusFilter === 'In Progress' ? 'active' : '' ?>">
+                                <span class="status-dot"></span> In Progress <span class="count-pill"><?= $inProgressCount ?></span>
+                            </a>
+                            <a href="index.php?status=Testing" class="status-filter-btn filter-testing <?= $statusFilter === 'Testing' ? 'active' : '' ?>">
+                                <span class="status-dot"></span> Testing <span class="count-pill"><?= $testingCount ?></span>
+                            </a>
+                            <a href="index.php?status=Planning" class="status-filter-btn filter-planning <?= $statusFilter === 'Planning' ? 'active' : '' ?>">
+                                <span class="status-dot"></span> Planning <span class="count-pill"><?= $planningCount ?></span>
+                            </a>
+                            <a href="index.php?status=Completed" class="status-filter-btn filter-completed <?= $statusFilter === 'Completed' ? 'active' : '' ?>">
+                                <span class="status-dot"></span> Completed <span class="count-pill"><?= $completedCount ?></span>
+                            </a>
                         </div>
                     </div>
-                    <div class="col-md-3 text-md-end">
-                        <a href="add.php" class="btn btn-sm btn-primary-navy px-3">
+                    <div class="col-lg-2 col-md-4 text-md-end">
+                        <a href="add.php" class="btn btn-sm btn-primary-navy px-3" style="border-radius: 14px; background: #2563EB;">
                             <i data-lucide="plus" style="width: 15px; height: 15px;"></i> New Project
                         </a>
                     </div>
