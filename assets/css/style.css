@@ -617,6 +617,11 @@ p, span, a, label, .form-label, .form-control, .form-select,
     color: #DC2626;
 }
 
+.metric-icon-box.icon-purple {
+    background: #F3E8FF;
+    color: #9333EA;
+}
+
 .sparkline-svg {
     width: 65px;
     height: 28px;

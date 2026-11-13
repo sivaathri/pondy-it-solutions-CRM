@@ -91,43 +91,74 @@ include __DIR__ . '/../../includes/header.php';
 
 <main class="app-main">
     <div class="container-fluid px-0">
-        <!-- Metric Cards -->
-        <div class="row g-3 mb-4">
-            <div class="col-md-3 col-sm-6">
-                <div class="metric-card">
-                    <div class="metric-icon-box icon-blue mb-2">
-                        <i data-lucide="folder-kanban" style="width: 20px; height: 20px;"></i>
+        <!-- Status Metric Cards (All, Planning, In Progress, Testing, Completed) -->
+        <div class="row row-cols-2 row-cols-sm-3 row-cols-lg-5 g-3 mb-4">
+            <!-- 1. All Projects -->
+            <div class="col">
+                <a href="index.php" class="text-decoration-none">
+                    <div class="metric-card <?= empty($statusFilter) ? 'border-primary' : '' ?> h-100">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <div class="metric-icon-box icon-blue">
+                                <i data-lucide="folder-kanban" style="width: 20px; height: 20px;"></i>
+                            </div>
+                            <span class="badge bg-light text-secondary border rounded-pill" style="font-size: 0.68rem;"><?= formatCurrency($totalBudget) ?></span>
+                        </div>
+                        <div class="metric-label">All Projects</div>
+                        <div class="metric-value"><?= $totalProjects ?></div>
                     </div>
-                    <div class="metric-label">All Projects</div>
-                    <div class="metric-value"><?= $totalProjects ?></div>
-                </div>
+                </a>
             </div>
-            <div class="col-md-3 col-sm-6">
-                <div class="metric-card">
-                    <div class="metric-icon-box icon-cyan mb-2">
-                        <i data-lucide="play" style="width: 20px; height: 20px;"></i>
+
+            <!-- 2. Planning -->
+            <div class="col">
+                <a href="index.php?status=Planning" class="text-decoration-none">
+                    <div class="metric-card <?= $statusFilter === 'Planning' ? 'border-primary' : '' ?> h-100">
+                        <div class="metric-icon-box icon-purple mb-2">
+                            <i data-lucide="layers" style="width: 20px; height: 20px;"></i>
+                        </div>
+                        <div class="metric-label">Planning</div>
+                        <div class="metric-value" style="color: #7E22CE !important;"><?= $planningCount ?></div>
                     </div>
-                    <div class="metric-label">Active & Testing</div>
-                    <div class="metric-value"><?= $activeCount ?></div>
-                </div>
+                </a>
             </div>
-            <div class="col-md-3 col-sm-6">
-                <div class="metric-card">
-                    <div class="metric-icon-box icon-green mb-2">
-                        <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i>
+
+            <!-- 3. In Progress -->
+            <div class="col">
+                <a href="index.php?status=In+Progress" class="text-decoration-none">
+                    <div class="metric-card <?= $statusFilter === 'In Progress' ? 'border-primary' : '' ?> h-100">
+                        <div class="metric-icon-box icon-blue mb-2">
+                            <i data-lucide="play" style="width: 20px; height: 20px;"></i>
+                        </div>
+                        <div class="metric-label">In Progress</div>
+                        <div class="metric-value text-primary" style="color: #1D4ED8 !important;"><?= $inProgressCount ?></div>
                     </div>
-                    <div class="metric-label">Completed</div>
-                    <div class="metric-value"><?= $completedCount ?></div>
-                </div>
+                </a>
             </div>
-            <div class="col-md-3 col-sm-6">
-                <div class="metric-card">
-                    <div class="metric-icon-box icon-yellow mb-2">
-                        <i data-lucide="banknote" style="width: 20px; height: 20px;"></i>
+
+            <!-- 4. Testing -->
+            <div class="col">
+                <a href="index.php?status=Testing" class="text-decoration-none">
+                    <div class="metric-card <?= $statusFilter === 'Testing' ? 'border-primary' : '' ?> h-100">
+                        <div class="metric-icon-box icon-yellow mb-2">
+                            <i data-lucide="flask-conical" style="width: 20px; height: 20px;"></i>
+                        </div>
+                        <div class="metric-label">Testing</div>
+                        <div class="metric-value" style="color: #92400E !important;"><?= $testingCount ?></div>
                     </div>
-                    <div class="metric-label">Contracted Value</div>
-                    <div class="metric-value" style="font-size: 1.35rem;"><?= formatCurrency($totalBudget) ?></div>
-                </div>
+                </a>
+            </div>
+
+            <!-- 5. Completed -->
+            <div class="col">
+                <a href="index.php?status=Completed" class="text-decoration-none">
+                    <div class="metric-card <?= $statusFilter === 'Completed' ? 'border-primary' : '' ?> h-100">
+                        <div class="metric-icon-box icon-green mb-2">
+                            <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i>
+                        </div>
+                        <div class="metric-label">Completed</div>
+                        <div class="metric-value text-success" style="color: #15803D !important;"><?= $completedCount ?></div>
+                    </div>
+                </a>
             </div>
         </div>
 
