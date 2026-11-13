@@ -76,7 +76,7 @@ $sql = "SELECT p.*, c.company_name, c.client_name, pm.full_name as manager_name,
         LEFT JOIN clients c ON p.client_id = c.id 
         LEFT JOIN users pm ON p.project_manager_id = pm.id 
         WHERE {$whereClause}
-        ORDER BY p.id ASC";
+        ORDER BY p.project_code ASC, p.id ASC";
 
 $stmt = $db->prepare($sql);
 $stmt->execute($params);
