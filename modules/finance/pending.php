@@ -80,17 +80,17 @@ include __DIR__ . '/../../includes/header.php';
                 <h2 class="content-card-title">Outstanding Invoices (<?= count($unpaid) ?>)</h2>
             </div>
             <div class="table-responsive">
-                <table class="table table-custom">
+                <table class="table table-custom align-middle">
                     <thead>
                         <tr>
-                            <th>Invoice #</th>
+                            <th style="white-space: nowrap;">Invoice #</th>
                             <th>Client</th>
                             <th>Project</th>
-                            <th>Due Date</th>
-                            <th>Aging</th>
-                            <th>Invoiced</th>
-                            <th>Paid</th>
-                            <th style="white-space: nowrap;">Balance Due</th>
+                            <th style="white-space: nowrap;">Due Date</th>
+                            <th class="text-center" style="white-space: nowrap;">Aging</th>
+                            <th class="text-end" style="white-space: nowrap;">Invoiced</th>
+                            <th class="text-end" style="white-space: nowrap;">Paid</th>
+                            <th class="text-end" style="white-space: nowrap;">Balance Due</th>
                             <th class="text-end" style="white-space: nowrap;">Action</th>
                         </tr>
                     </thead>
@@ -102,8 +102,8 @@ include __DIR__ . '/../../includes/header.php';
                                 $daysOverdue = (int)$inv['overdue_days'];
                             ?>
                                 <tr>
-                                    <td>
-                                        <a href="invoice_view.php?id=<?= $inv['id'] ?>" class="fw-bold text-decoration-none">
+                                    <td style="white-space: nowrap;">
+                                        <a href="invoice_view.php?id=<?= $inv['id'] ?>" class="fw-bold text-decoration-none" style="color: #2563EB;">
                                             <?= e($inv['invoice_code']) ?>
                                         </a>
                                     </td>
@@ -111,9 +111,11 @@ include __DIR__ . '/../../includes/header.php';
                                         <div class="fw-bold small text-dark"><?= e($inv['company_name'] ?: $inv['client_name']) ?></div>
                                         <div class="small text-muted"><?= e($inv['client_phone']) ?></div>
                                     </td>
-                                    <td class="small text-secondary"><?= e($inv['project_code'] ?: '-') ?></td>
-                                    <td class="small <?= $daysOverdue > 0 ? 'text-danger fw-bold' : 'text-secondary' ?>"><?= formatDate($inv['due_date']) ?></td>
                                     <td>
+                                        <div class="small text-secondary"><?= e($inv['project_code'] ?: '-') ?></div>
+                                    </td>
+                                    <td class="small <?= $daysOverdue > 0 ? 'text-danger fw-bold' : 'text-secondary' ?>" style="white-space: nowrap;"><?= formatDate($inv['due_date']) ?></td>
+                                    <td class="text-center" style="white-space: nowrap;">
                                         <?php if ($daysOverdue > 0): ?>
                                             <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill">
                                                 <?= $daysOverdue ?> days overdue
@@ -124,10 +126,10 @@ include __DIR__ . '/../../includes/header.php';
                                             </span>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="small fw-semibold text-dark" style="white-space: nowrap;"><?= formatCurrency($inv['grand_total']) ?></td>
-                                    <td class="small text-success" style="white-space: nowrap;"><?= formatCurrency($inv['paid_amount']) ?></td>
-                                    <td class="small fw-bold text-danger" style="white-space: nowrap;"><?= formatCurrency($inv['balance_amount']) ?></td>
-                                    <td class="text-end">
+                                    <td class="small fw-semibold text-dark text-end" style="white-space: nowrap;"><?= formatCurrency($inv['grand_total']) ?></td>
+                                    <td class="small text-success text-end" style="white-space: nowrap;"><?= formatCurrency($inv['paid_amount']) ?></td>
+                                    <td class="small fw-bold text-danger text-end" style="white-space: nowrap;"><?= formatCurrency($inv['balance_amount']) ?></td>
+                                    <td class="text-end" style="white-space: nowrap;">
                                         <a href="payments.php?invoice_id=<?= $inv['id'] ?>" class="btn btn-sm btn-gold">
                                             <i data-lucide="credit-card" style="width: 13px; height: 13px;"></i> Record Payment
                                         </a>

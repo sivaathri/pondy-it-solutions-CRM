@@ -137,19 +137,19 @@ include __DIR__ . '/../../includes/header.php';
                 <h2 class="content-card-title">Invoices (<?= count($invoices) ?>)</h2>
             </div>
             <div class="table-responsive">
-                <table class="table table-custom">
+                <table class="table table-custom align-middle">
                     <thead>
                         <tr>
-                            <th>Invoice #</th>
+                            <th style="white-space: nowrap;">Invoice #</th>
                             <th>Client / Company</th>
                             <th>Project</th>
-                            <th>Invoice Date</th>
-                            <th>Due Date</th>
-                            <th>Total</th>
-                            <th>Paid</th>
-                            <th>Balance</th>
-                            <th>Status</th>
-                            <th class="text-end">Actions</th>
+                            <th style="white-space: nowrap;">Invoice Date</th>
+                            <th style="white-space: nowrap;">Due Date</th>
+                            <th class="text-end" style="white-space: nowrap;">Total</th>
+                            <th class="text-end" style="white-space: nowrap;">Paid</th>
+                            <th class="text-end" style="white-space: nowrap;">Balance</th>
+                            <th class="text-center" style="white-space: nowrap;">Status</th>
+                            <th class="text-end" style="white-space: nowrap;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -158,8 +158,8 @@ include __DIR__ . '/../../includes/header.php';
                         <?php else: ?>
                             <?php foreach ($invoices as $inv): ?>
                                 <tr>
-                                    <td>
-                                        <a href="invoice_view.php?id=<?= $inv['id'] ?>" class="fw-bold text-decoration-none">
+                                    <td style="white-space: nowrap;">
+                                        <a href="invoice_view.php?id=<?= $inv['id'] ?>" class="fw-bold text-decoration-none" style="color: #2563EB;">
                                             <?= e($inv['invoice_code']) ?>
                                         </a>
                                     </td>
@@ -169,15 +169,15 @@ include __DIR__ . '/../../includes/header.php';
                                     <td>
                                         <div class="small text-secondary"><?= e($inv['project_code'] ? "{$inv['project_code']} - {$inv['project_name']}" : 'Direct Service') ?></div>
                                     </td>
-                                    <td class="small text-secondary"><?= formatDate($inv['invoice_date']) ?></td>
-                                    <td class="small text-secondary"><?= formatDate($inv['due_date']) ?></td>
-                                    <td class="small fw-bold text-dark" style="white-space: nowrap;"><?= formatCurrency($inv['grand_total']) ?></td>
-                                    <td class="small fw-semibold text-success" style="white-space: nowrap;"><?= formatCurrency($inv['paid_amount']) ?></td>
-                                    <td class="small fw-bold <?= $inv['balance_amount'] > 0 ? 'text-danger' : 'text-muted' ?>" style="white-space: nowrap;">
+                                    <td class="small text-secondary" style="white-space: nowrap;"><?= formatDate($inv['invoice_date']) ?></td>
+                                    <td class="small text-secondary" style="white-space: nowrap;"><?= formatDate($inv['due_date']) ?></td>
+                                    <td class="small fw-bold text-dark text-end" style="white-space: nowrap;"><?= formatCurrency($inv['grand_total']) ?></td>
+                                    <td class="small fw-semibold text-success text-end" style="white-space: nowrap;"><?= formatCurrency($inv['paid_amount']) ?></td>
+                                    <td class="small fw-bold text-end <?= $inv['balance_amount'] > 0 ? 'text-danger' : 'text-muted' ?>" style="white-space: nowrap;">
                                         <?= formatCurrency($inv['balance_amount']) ?>
                                     </td>
-                                    <td><?= renderStatusBadge($inv['status']) ?></td>
-                                    <td class="text-end">
+                                    <td class="text-center" style="white-space: nowrap;"><?= renderStatusBadge($inv['status']) ?></td>
+                                    <td class="text-end" style="white-space: nowrap;">
                                         <div class="btn-group btn-group-sm">
                                             <a href="invoice_view.php?id=<?= $inv['id'] ?>" class="btn btn-light border" title="View / Print">
                                                 <i data-lucide="printer" style="width: 13px; height: 13px;"></i>
