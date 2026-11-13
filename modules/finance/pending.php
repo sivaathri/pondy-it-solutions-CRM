@@ -128,7 +128,7 @@ include __DIR__ . '/../../includes/header.php';
                                     </td>
                                     <td class="small fw-semibold text-dark text-end" style="white-space: nowrap;"><?= formatCurrency($inv['grand_total']) ?></td>
                                     <td class="small text-success text-end" style="white-space: nowrap;"><?= formatCurrency($inv['paid_amount']) ?></td>
-                                    <td class="small fw-bold text-danger text-end" style="white-space: nowrap;"><?= formatCurrency($inv['balance_amount']) ?></td>
+                                    <td class="small fw-bold text-end" style="white-space: nowrap;"><span class="text-danger"><?= formatCurrency($inv['balance_amount']) ?></span></td>
                                     <td class="text-end" style="white-space: nowrap;">
                                         <a href="payments.php?invoice_id=<?= $inv['id'] ?>" class="btn btn-sm btn-gold">
                                             <i data-lucide="credit-card" style="width: 13px; height: 13px;"></i> Record Payment

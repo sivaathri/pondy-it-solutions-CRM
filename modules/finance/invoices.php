@@ -173,8 +173,10 @@ include __DIR__ . '/../../includes/header.php';
                                     <td class="small text-secondary" style="white-space: nowrap;"><?= formatDate($inv['due_date']) ?></td>
                                     <td class="small fw-bold text-dark text-end" style="white-space: nowrap;"><?= formatCurrency($inv['grand_total']) ?></td>
                                     <td class="small fw-semibold text-success text-end" style="white-space: nowrap;"><?= formatCurrency($inv['paid_amount']) ?></td>
-                                    <td class="small fw-bold text-end <?= $inv['balance_amount'] > 0 ? 'text-danger' : 'text-muted' ?>" style="white-space: nowrap;">
-                                        <?= formatCurrency($inv['balance_amount']) ?>
+                                    <td class="small fw-bold text-end" style="white-space: nowrap;">
+                                        <span class="<?= $inv['balance_amount'] > 0 ? 'text-danger' : 'text-muted' ?>">
+                                            <?= formatCurrency($inv['balance_amount']) ?>
+                                        </span>
                                     </td>
                                     <td class="text-center" style="white-space: nowrap;"><?= renderStatusBadge($inv['status']) ?></td>
                                     <td class="text-end" style="white-space: nowrap;">
