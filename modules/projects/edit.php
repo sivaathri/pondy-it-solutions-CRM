@@ -314,7 +314,7 @@ include __DIR__ . '/../../includes/header.php';
                                             </div>
                                             <div class="col-md-4">
                                                 <label class="form-label" style="font-size: 10.5px;">Web URL</label>
-                                                <input type="url" name="project_urls[<?= $idx ?>][url]" class="form-control form-control-sm" placeholder="https://app.example.com" value="<?= e($urlItem['url']) ?>" required>
+                                                <input type="text" name="project_urls[<?= $idx ?>][url]" class="form-control form-control-sm url-input-field" placeholder="https://app.example.com" value="<?= e($urlItem['url']) ?>">
                                             </div>
                                             <div class="col-md-2 d-flex align-items-end justify-content-between pt-3 pt-md-0">
                                                 <div>
@@ -354,7 +354,7 @@ include __DIR__ . '/../../includes/header.php';
                                         </div>
                                         <div class="col-md-4">
                                             <label class="form-label" style="font-size: 10.5px;">Web URL</label>
-                                            <input type="url" name="project_urls[0][url]" class="form-control form-control-sm" placeholder="https://app.example.com">
+                                            <input type="text" name="project_urls[0][url]" class="form-control form-control-sm url-input-field" placeholder="https://app.example.com">
                                         </div>
                                         <div class="col-md-2 d-flex align-items-end justify-content-between pt-3 pt-md-0">
                                             <div>
@@ -497,7 +497,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         </div>
                         <div class="col-md-4">
                             <label class="form-label" style="font-size: 10.5px;">Web URL</label>
-                            <input type="url" name="project_urls[${urlRowIndex}][url]" class="form-control form-control-sm" placeholder="https://...">
+                            <input type="text" name="project_urls[${urlRowIndex}][url]" class="form-control form-control-sm url-input-field" placeholder="https://...">
                         </div>
                         <div class="col-md-2 d-flex align-items-end justify-content-between pt-3 pt-md-0">
                             <div>
@@ -535,6 +535,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
         });
+
+        // Auto-prefix https:// if user types domain without protocol (e.g. lightsevent.com)
+        urlsContainer.addEventListener('blur', function (e) {
+            if (e.target && e.target.classList.contains('url-input-field')) {
+                let val = e.target.value.trim();
+                if (val && !/^https?:\/\//i.test(val) && !/^ftp:\/\//i.test(val)) {
+                    e.target.value = 'https://' + val;
+                }
+            }
+        }, true);
     }
 });
 </script>

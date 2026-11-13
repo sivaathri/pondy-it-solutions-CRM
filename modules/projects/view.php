@@ -1235,6 +1235,16 @@ function fallbackCopy(text, callback) {
     } catch (e) {}
     document.body.removeChild(ta);
 }
+
+// Auto-prefix https:// if user types domain without protocol (e.g. lightsevent.com)
+document.addEventListener('blur', function (e) {
+    if (e.target && (e.target.name === 'url' || (e.target.name && e.target.name.includes('[url]')))) {
+        let val = e.target.value.trim();
+        if (val && !/^https?:\/\//i.test(val) && !/^ftp:\/\//i.test(val)) {
+            e.target.value = 'https://' + val;
+        }
+    }
+}, true);
 </script>
 
 <?php include __DIR__ . '/../../includes/footer.php'; ?>
