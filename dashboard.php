@@ -548,57 +548,66 @@ include __DIR__ . '/includes/header.php';
         <!-- DASHBOARD DATE RANGE FILTER TOOLBAR -->
         <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 bg-white">
             <form method="GET" action="dashboard.php" id="dashboardFilterForm">
-                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-                    <!-- Left: Label & Presets -->
-                    <div class="d-flex align-items-center flex-wrap gap-2">
-                        <div class="d-flex align-items-center gap-2 me-2">
-                            <div class="bg-primary-subtle text-primary p-2 rounded-3 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                <div class="row g-3 align-items-center">
+                    <!-- Left: Brand Icon & Title -->
+                    <div class="col-xl-3 col-lg-3 col-md-12">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="bg-primary-subtle text-primary rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px;">
                                 <i data-lucide="calendar" style="width: 18px; height: 18px; color: #2563EB;"></i>
                             </div>
                             <div>
-                                <span class="fw-bold text-dark fs-6 d-block" style="line-height: 1.2;">Date Filter</span>
-                                <span class="small text-muted" style="font-size: 0.75rem;">Filter analytics & performance</span>
+                                <h6 class="fw-bold text-dark mb-0 fs-6">Date Range Filter</h6>
+                                <span class="small text-muted" style="font-size: 0.74rem;">Custom analytics & performance</span>
                             </div>
-                        </div>
-
-                        <!-- Quick Presets -->
-                        <div class="btn-group btn-group-sm" role="group">
-                            <button type="button" class="btn btn-light border preset-btn" onclick="applyPreset('today')">Today</button>
-                            <button type="button" class="btn btn-light border preset-btn" onclick="applyPreset('this_month')">This Month</button>
-                            <button type="button" class="btn btn-light border preset-btn" onclick="applyPreset('last_month')">Last Month</button>
-                            <button type="button" class="btn btn-light border preset-btn" onclick="applyPreset('this_quarter')">Quarter</button>
-                            <button type="button" class="btn btn-light border preset-btn" onclick="applyPreset('this_year')">This Year</button>
-                            <button type="button" class="btn btn-light border preset-btn" onclick="applyPreset('all')">All Time</button>
                         </div>
                     </div>
 
-                    <!-- Right: From & To Date Inputs + Action Buttons -->
-                    <div class="d-flex align-items-center flex-wrap gap-2">
-                        <div class="d-flex align-items-center gap-1">
-                            <span class="small text-muted fw-bold text-uppercase" style="font-size: 0.72rem;">From:</span>
-                            <input type="date" name="date_from" id="filterDateFrom" class="form-control form-control-sm" style="width: 145px; border-radius: 8px;" value="<?= e($dateFrom) ?>">
+                    <!-- Center: Quick Preset Pills -->
+                    <div class="col-xl-5 col-lg-5 col-md-12">
+                        <div class="d-flex align-items-center gap-1 flex-wrap">
+                            <button type="button" class="btn btn-sm btn-light border px-2.5 py-1 preset-pill fw-semibold text-secondary" style="font-size: 0.78rem; border-radius: 8px; height: 33px;" onclick="applyPreset('today')">Today</button>
+                            <button type="button" class="btn btn-sm btn-light border px-2.5 py-1 preset-pill fw-semibold text-secondary" style="font-size: 0.78rem; border-radius: 8px; height: 33px;" onclick="applyPreset('this_month')">This Month</button>
+                            <button type="button" class="btn btn-sm btn-light border px-2.5 py-1 preset-pill fw-semibold text-secondary" style="font-size: 0.78rem; border-radius: 8px; height: 33px;" onclick="applyPreset('last_month')">Last Month</button>
+                            <button type="button" class="btn btn-sm btn-light border px-2.5 py-1 preset-pill fw-semibold text-secondary" style="font-size: 0.78rem; border-radius: 8px; height: 33px;" onclick="applyPreset('this_quarter')">Quarter</button>
+                            <button type="button" class="btn btn-sm btn-light border px-2.5 py-1 preset-pill fw-semibold text-secondary" style="font-size: 0.78rem; border-radius: 8px; height: 33px;" onclick="applyPreset('this_year')">This Year</button>
+                            <button type="button" class="btn btn-sm btn-light border px-2.5 py-1 preset-pill fw-semibold text-secondary" style="font-size: 0.78rem; border-radius: 8px; height: 33px;" onclick="applyPreset('all')">All Time</button>
                         </div>
-                        <div class="d-flex align-items-center gap-1">
-                            <span class="small text-muted fw-bold text-uppercase" style="font-size: 0.72rem;">To:</span>
-                            <input type="date" name="date_to" id="filterDateTo" class="form-control form-control-sm" style="width: 145px; border-radius: 8px;" value="<?= e($dateTo) ?>">
+                    </div>
+
+                    <!-- Right: Unified From & To Inputs + Action Buttons -->
+                    <div class="col-xl-4 col-lg-4 col-md-12 text-lg-end">
+                        <div class="d-flex align-items-center justify-content-lg-end gap-2 flex-wrap">
+                            <div class="input-group input-group-sm" style="width: auto;">
+                                <span class="input-group-text bg-light text-secondary border-end-0 fw-semibold px-2" style="font-size: 0.75rem; border-radius: 8px 0 0 8px; height: 33px;">From</span>
+                                <input type="date" name="date_from" id="filterDateFrom" class="form-control form-control-sm border-start-0" style="width: 135px; border-radius: 0 8px 8px 0; height: 33px; font-size: 0.8rem;" value="<?= e($dateFrom) ?>">
+                            </div>
+                            <div class="input-group input-group-sm" style="width: auto;">
+                                <span class="input-group-text bg-light text-secondary border-end-0 fw-semibold px-2" style="font-size: 0.75rem; border-radius: 8px 0 0 8px; height: 33px;">To</span>
+                                <input type="date" name="date_to" id="filterDateTo" class="form-control form-control-sm border-start-0" style="width: 135px; border-radius: 0 8px 8px 0; height: 33px; font-size: 0.8rem;" value="<?= e($dateTo) ?>">
+                            </div>
+                            <button type="submit" class="btn btn-sm btn-primary-navy px-3 d-flex align-items-center gap-1 flex-shrink-0" style="border-radius: 8px; background: #2563EB; font-weight: 600; height: 33px;">
+                                <i data-lucide="filter" style="width: 13px; height: 13px;"></i> Apply
+                            </button>
+                            <?php if ($hasDateFilter): ?>
+                                <a href="dashboard.php" class="btn btn-sm btn-light border text-danger d-flex align-items-center gap-1 flex-shrink-0" style="border-radius: 8px; height: 33px;" title="Clear filter">
+                                    <i data-lucide="x" style="width: 13px; height: 13px;"></i>
+                                </a>
+                            <?php endif; ?>
                         </div>
-                        <button type="submit" class="btn btn-sm btn-primary-navy px-3 d-flex align-items-center gap-1" style="border-radius: 8px; background: #2563EB; font-weight: 600;">
-                            <i data-lucide="filter" style="width: 14px; height: 14px;"></i> Apply Filter
-                        </button>
-                        <?php if ($hasDateFilter): ?>
-                            <a href="dashboard.php" class="btn btn-sm btn-light border d-flex align-items-center gap-1 text-danger" style="border-radius: 8px;" title="Reset Date Filter">
-                                <i data-lucide="x" style="width: 14px; height: 14px;"></i> Clear
-                            </a>
-                        <?php endif; ?>
                     </div>
                 </div>
 
                 <?php if ($hasDateFilter): ?>
-                    <div class="d-flex align-items-center gap-2 mt-2 pt-2 border-top small text-muted">
-                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-1">
-                            <i data-lucide="check" style="width: 12px; height: 12px;" class="me-1"></i> Active Date Range: <?= formatDate($dateFrom) ?> &mdash; <?= formatDate($dateTo) ?>
-                        </span>
-                        <span class="text-secondary small">&bull; All top metrics, charts, finances, and pipeline reflect this period</span>
+                    <div class="d-flex align-items-center justify-content-between mt-3 pt-2 border-top flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1.5 fw-semibold" style="font-size: 0.78rem;">
+                                <i data-lucide="check-circle" style="width: 13px; height: 13px;" class="me-1"></i> Active Range: <?= formatDate($dateFrom) ?> &mdash; <?= formatDate($dateTo) ?>
+                            </span>
+                            <span class="text-muted small">&bull; Real-time recalculated metrics, charts & pipeline</span>
+                        </div>
+                        <a href="dashboard.php" class="small text-danger text-decoration-none fw-semibold d-flex align-items-center gap-1">
+                            <i data-lucide="rotate-ccw" style="width: 12px; height: 12px;"></i> Reset to All-Time
+                        </a>
                     </div>
                 <?php endif; ?>
             </form>
