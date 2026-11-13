@@ -449,6 +449,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     if (startDateInput) {
+        startDateInput.addEventListener('input', function () {
+            calcEndFromDays();
+            updatePreviews();
+        });
         startDateInput.addEventListener('change', function () {
             calcEndFromDays();
             updatePreviews();
@@ -456,6 +460,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     if (endDateInput) {
+        endDateInput.addEventListener('input', function () {
+            calcDaysFromEnd();
+            updatePreviews();
+        });
         endDateInput.addEventListener('change', function () {
             calcDaysFromEnd();
             updatePreviews();
@@ -470,7 +478,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const urlsContainer = document.getElementById('projectUrlsContainer');
     const btnAddUrlRow = document.getElementById('btnAddUrlRow');
     let urlRowIndex = <?= max(2, count($existingUrls) + 1) ?>;
-    const todayDateFormatted = '<?= date('d M Y') ?>';
+    const nowD = new Date();
+    const todayDateFormatted = `${String(nowD.getDate()).padStart(2, '0')} ${months[nowD.getMonth()]} ${nowD.getFullYear()}`;
 
     if (btnAddUrlRow && urlsContainer) {
         btnAddUrlRow.addEventListener('click', function () {

@@ -483,6 +483,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     if (startDateInput) {
+        startDateInput.addEventListener('input', function () {
+            calcEndFromDays();
+            updatePreviews();
+        });
         startDateInput.addEventListener('change', function () {
             calcEndFromDays();
             updatePreviews();
@@ -490,6 +494,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     if (endDateInput) {
+        endDateInput.addEventListener('input', function () {
+            calcDaysFromEnd();
+            updatePreviews();
+        });
         endDateInput.addEventListener('change', function () {
             calcDaysFromEnd();
             updatePreviews();
@@ -505,7 +513,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const btnAddUrlRow = document.getElementById('btnAddUrlRow');
     let urlRowIndex = 2; // Rows 0 and 1 are already present
 
-    const todayDateFormatted = '<?= date('d M Y') ?>';
+    const nowD = new Date();
+    const todayDateFormatted = `${String(nowD.getDate()).padStart(2, '0')} ${months[nowD.getMonth()]} ${nowD.getFullYear()}`;
 
     if (btnAddUrlRow && urlsContainer) {
         btnAddUrlRow.addEventListener('click', function () {
@@ -568,6 +577,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     } else {
                         // Just clear inputs if only 1 row
                         row.querySelectorAll('input').forEach(inp => inp.value = '');
+                    }
+                }
+            }
+        });
+
         // Auto-prefix https:// if user types domain without protocol (e.g. lightsevent.com)
         urlsContainer.addEventListener('blur', function (e) {
             if (e.target && e.target.classList.contains('url-input-field')) {
