@@ -24,34 +24,79 @@ if (!$db) {
 }
 
 // -------------------------------------------------------------
+// DATE RANGE FILTER PARSING & CONFIGURATION
+// -------------------------------------------------------------
+$dateFrom = trim($_GET['date_from'] ?? '');
+$dateTo = trim($_GET['date_to'] ?? '');
+
+$hasDateFilter = false;
+$trendPeriodText = 'vs last month';
+$priorFrom = '';
+$priorTo = '';
+
+if (!empty($dateFrom) && !empty($dateTo)) {
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateFrom) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateTo)) {
+        if ($dateFrom <= $dateTo) {
+            $hasDateFilter = true;
+            $dFrom = new DateTime($dateFrom);
+            $dTo = new DateTime($dateTo);
+            $daysDiff = (int)$dFrom->diff($dTo)->days + 1;
+            $priorToDate = (clone $dFrom)->modify('-1 day');
+            $priorFromDate = (clone $priorToDate)->modify('-' . ($daysDiff - 1) . ' days');
+            $priorFrom = $priorFromDate->format('Y-m-d');
+            $priorTo = $priorToDate->format('Y-m-d');
+            $trendPeriodText = "vs prior {$daysDiff}d";
+        }
+    }
+}
+
+// -------------------------------------------------------------
 // METRICS & QUERIES (100% Dynamic from database)
 // -------------------------------------------------------------
 
-// 1. Total Enquiries & Month-over-Month Trend
+// 1. Total Enquiries & Trend
 $totalEnquiries = 0;
 $enquiryTrendPct = 0;
 $enquiryTrendDirection = 'up';
 try {
-    $stmt = $db->query("SELECT COUNT(*) FROM enquiries");
-    $totalEnquiries = (int)$stmt->fetchColumn();
+    if ($hasDateFilter) {
+        $stmt = $db->prepare("SELECT COUNT(*) FROM enquiries WHERE (DATE(created_at) BETWEEN ? AND ? OR (enquiry_date IS NOT NULL AND enquiry_date BETWEEN ? AND ?))");
+        $stmt->execute([$dateFrom, $dateTo, $dateFrom, $dateTo]);
+        $totalEnquiries = (int)$stmt->fetchColumn();
 
-    $stmt = $db->query("
-        SELECT 
-            SUM(CASE WHEN created_at >= DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01') THEN 1 ELSE 0 END) as this_month,
-            SUM(CASE WHEN created_at >= DATE_SUB(DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01'), INTERVAL 1 MONTH) 
-                      AND created_at < DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01') THEN 1 ELSE 0 END) as last_month
-        FROM enquiries
-    ");
-    $enqTrend = $stmt->fetch();
-    $thisM = (int)($enqTrend['this_month'] ?? 0);
-    $lastM = (int)($enqTrend['last_month'] ?? 0);
-    if ($lastM > 0) {
-        $diff = round((($thisM - $lastM) / $lastM) * 100);
-        $enquiryTrendPct = abs($diff);
-        $enquiryTrendDirection = $diff >= 0 ? 'up' : 'down';
+        $stmt = $db->prepare("SELECT COUNT(*) FROM enquiries WHERE (DATE(created_at) BETWEEN ? AND ? OR (enquiry_date IS NOT NULL AND enquiry_date BETWEEN ? AND ?))");
+        $stmt->execute([$priorFrom, $priorTo, $priorFrom, $priorTo]);
+        $priorCount = (int)$stmt->fetchColumn();
+        if ($priorCount > 0) {
+            $diff = round((($totalEnquiries - $priorCount) / $priorCount) * 100);
+            $enquiryTrendPct = abs($diff);
+            $enquiryTrendDirection = $diff >= 0 ? 'up' : 'down';
+        } else {
+            $enquiryTrendPct = $totalEnquiries > 0 ? 100 : 0;
+            $enquiryTrendDirection = 'up';
+        }
     } else {
-        $enquiryTrendPct = $thisM > 0 ? 100 : 0;
-        $enquiryTrendDirection = 'up';
+        $stmt = $db->query("SELECT COUNT(*) FROM enquiries");
+        $totalEnquiries = (int)$stmt->fetchColumn();
+
+        $stmt = $db->query("
+            SELECT 
+                SUM(CASE WHEN created_at >= DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01') THEN 1 ELSE 0 END) as this_month,
+                SUM(CASE WHEN created_at >= DATE_SUB(DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01'), INTERVAL 1 MONTH) 
+                          AND created_at < DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01') THEN 1 ELSE 0 END) as last_month
+            FROM enquiries
+        ");
+        $enqTrend = $stmt->fetch();
+        $thisM = (int)($enqTrend['this_month'] ?? 0);
+        $lastM = (int)($enqTrend['last_month'] ?? 0);
+        if ($lastM > 0) {
+            $diff = round((($thisM - $lastM) / $lastM) * 100);
+            $enquiryTrendPct = abs($diff);
+            $enquiryTrendDirection = $diff >= 0 ? 'up' : 'down';
+        } else {
+            $enquiryTrendPct = $thisM > 0 ? 100 : 0;
+            $enquiryTrendDirection = 'up';
+        }
     }
 } catch (Exception $e) {}
 
@@ -60,26 +105,50 @@ $approvedProjectsCount = 0;
 $approvedTrendPct = 0;
 $approvedTrendDirection = 'up';
 try {
-    $stmt = $db->query("SELECT COUNT(*) FROM projects WHERE status != 'Cancelled'");
-    $approvedProjectsCount = (int)$stmt->fetchColumn();
+    if ($hasDateFilter) {
+        $stmt = $db->prepare("SELECT COUNT(*) FROM projects WHERE status != 'Cancelled' AND (
+            DATE(created_at) BETWEEN ? AND ? 
+            OR (start_date IS NOT NULL AND start_date BETWEEN ? AND ?)
+        )");
+        $stmt->execute([$dateFrom, $dateTo, $dateFrom, $dateTo]);
+        $approvedProjectsCount = (int)$stmt->fetchColumn();
 
-    $stmt = $db->query("
-        SELECT 
-            SUM(CASE WHEN created_at >= DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01') AND status != 'Cancelled' THEN 1 ELSE 0 END) as this_month,
-            SUM(CASE WHEN created_at >= DATE_SUB(DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01'), INTERVAL 1 MONTH) 
-                      AND created_at < DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01') AND status != 'Cancelled' THEN 1 ELSE 0 END) as last_month
-        FROM projects
-    ");
-    $appTrend = $stmt->fetch();
-    $thisM = (int)($appTrend['this_month'] ?? 0);
-    $lastM = (int)($appTrend['last_month'] ?? 0);
-    if ($lastM > 0) {
-        $diff = round((($thisM - $lastM) / $lastM) * 100);
-        $approvedTrendPct = abs($diff);
-        $approvedTrendDirection = $diff >= 0 ? 'up' : 'down';
+        $stmt = $db->prepare("SELECT COUNT(*) FROM projects WHERE status != 'Cancelled' AND (
+            DATE(created_at) BETWEEN ? AND ? 
+            OR (start_date IS NOT NULL AND start_date BETWEEN ? AND ?)
+        )");
+        $stmt->execute([$priorFrom, $priorTo, $priorFrom, $priorTo]);
+        $priorCount = (int)$stmt->fetchColumn();
+        if ($priorCount > 0) {
+            $diff = round((($approvedProjectsCount - $priorCount) / $priorCount) * 100);
+            $approvedTrendPct = abs($diff);
+            $approvedTrendDirection = $diff >= 0 ? 'up' : 'down';
+        } else {
+            $approvedTrendPct = $approvedProjectsCount > 0 ? 100 : 0;
+            $approvedTrendDirection = 'up';
+        }
     } else {
-        $approvedTrendPct = $thisM > 0 ? 100 : 0;
-        $approvedTrendDirection = 'up';
+        $stmt = $db->query("SELECT COUNT(*) FROM projects WHERE status != 'Cancelled'");
+        $approvedProjectsCount = (int)$stmt->fetchColumn();
+
+        $stmt = $db->query("
+            SELECT 
+                SUM(CASE WHEN created_at >= DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01') AND status != 'Cancelled' THEN 1 ELSE 0 END) as this_month,
+                SUM(CASE WHEN created_at >= DATE_SUB(DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01'), INTERVAL 1 MONTH) 
+                          AND created_at < DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01') AND status != 'Cancelled' THEN 1 ELSE 0 END) as last_month
+            FROM projects
+        ");
+        $appTrend = $stmt->fetch();
+        $thisM = (int)($appTrend['this_month'] ?? 0);
+        $lastM = (int)($appTrend['last_month'] ?? 0);
+        if ($lastM > 0) {
+            $diff = round((($thisM - $lastM) / $lastM) * 100);
+            $approvedTrendPct = abs($diff);
+            $approvedTrendDirection = $diff >= 0 ? 'up' : 'down';
+        } else {
+            $approvedTrendPct = $thisM > 0 ? 100 : 0;
+            $approvedTrendDirection = 'up';
+        }
     }
 } catch (Exception $e) {}
 
@@ -88,26 +157,48 @@ $activeProjectsCount = 0;
 $activeTrendPct = 0;
 $activeTrendDirection = 'up';
 try {
-    $stmt = $db->query("SELECT COUNT(*) FROM projects WHERE status IN ('In Progress', 'Testing')");
-    $activeProjectsCount = (int)$stmt->fetchColumn();
+    if ($hasDateFilter) {
+        $stmt = $db->prepare("SELECT COUNT(*) FROM projects WHERE status IN ('In Progress', 'Testing') AND (
+            DATE(created_at) <= ? AND (actual_completion_date IS NULL OR actual_completion_date >= ?)
+        )");
+        $stmt->execute([$dateTo, $dateFrom]);
+        $activeProjectsCount = (int)$stmt->fetchColumn();
 
-    $stmt = $db->query("
-        SELECT 
-            SUM(CASE WHEN created_at >= DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01') AND status IN ('In Progress', 'Testing') THEN 1 ELSE 0 END) as this_month,
-            SUM(CASE WHEN created_at >= DATE_SUB(DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01'), INTERVAL 1 MONTH) 
-                      AND created_at < DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01') AND status IN ('In Progress', 'Testing') THEN 1 ELSE 0 END) as last_month
-        FROM projects
-    ");
-    $actTrend = $stmt->fetch();
-    $thisM = (int)($actTrend['this_month'] ?? 0);
-    $lastM = (int)($actTrend['last_month'] ?? 0);
-    if ($lastM > 0) {
-        $diff = round((($thisM - $lastM) / $lastM) * 100);
-        $activeTrendPct = abs($diff);
-        $activeTrendDirection = $diff >= 0 ? 'up' : 'down';
+        $stmt = $db->prepare("SELECT COUNT(*) FROM projects WHERE status IN ('In Progress', 'Testing') AND (
+            DATE(created_at) <= ? AND (actual_completion_date IS NULL OR actual_completion_date >= ?)
+        )");
+        $stmt->execute([$priorTo, $priorFrom]);
+        $priorCount = (int)$stmt->fetchColumn();
+        if ($priorCount > 0) {
+            $diff = round((($activeProjectsCount - $priorCount) / $priorCount) * 100);
+            $activeTrendPct = abs($diff);
+            $activeTrendDirection = $diff >= 0 ? 'up' : 'down';
+        } else {
+            $activeTrendPct = $activeProjectsCount > 0 ? 100 : 0;
+            $activeTrendDirection = 'up';
+        }
     } else {
-        $activeTrendPct = $thisM > 0 ? 100 : 0;
-        $activeTrendDirection = 'up';
+        $stmt = $db->query("SELECT COUNT(*) FROM projects WHERE status IN ('In Progress', 'Testing')");
+        $activeProjectsCount = (int)$stmt->fetchColumn();
+
+        $stmt = $db->query("
+            SELECT 
+                SUM(CASE WHEN created_at >= DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01') AND status IN ('In Progress', 'Testing') THEN 1 ELSE 0 END) as this_month,
+                SUM(CASE WHEN created_at >= DATE_SUB(DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01'), INTERVAL 1 MONTH) 
+                          AND created_at < DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01') AND status IN ('In Progress', 'Testing') THEN 1 ELSE 0 END) as last_month
+            FROM projects
+        ");
+        $actTrend = $stmt->fetch();
+        $thisM = (int)($actTrend['this_month'] ?? 0);
+        $lastM = (int)($actTrend['last_month'] ?? 0);
+        if ($lastM > 0) {
+            $diff = round((($thisM - $lastM) / $lastM) * 100);
+            $activeTrendPct = abs($diff);
+            $activeTrendDirection = $diff >= 0 ? 'up' : 'down';
+        } else {
+            $activeTrendPct = $thisM > 0 ? 100 : 0;
+            $activeTrendDirection = 'up';
+        }
     }
 } catch (Exception $e) {}
 
@@ -116,25 +207,49 @@ $completedProjectsCount = 0;
 $completedTrendPct = 0;
 $completedTrendDirection = 'up';
 try {
-    $stmt = $db->query("SELECT COUNT(*) FROM projects WHERE status = 'Completed'");
-    $completedProjectsCount = (int)$stmt->fetchColumn();
+    if ($hasDateFilter) {
+        $stmt = $db->prepare("SELECT COUNT(*) FROM projects WHERE status = 'Completed' AND (
+            (actual_completion_date IS NOT NULL AND actual_completion_date BETWEEN ? AND ?) 
+            OR (actual_completion_date IS NULL AND DATE(updated_at) BETWEEN ? AND ?)
+        )");
+        $stmt->execute([$dateFrom, $dateTo, $dateFrom, $dateTo]);
+        $completedProjectsCount = (int)$stmt->fetchColumn();
 
-    $stmt = $db->query("
-        SELECT 
-            SUM(CASE WHEN status = 'Completed' AND (actual_completion_date >= DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01') OR (actual_completion_date IS NULL AND updated_at >= DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01'))) THEN 1 ELSE 0 END) as this_month,
-            SUM(CASE WHEN status = 'Completed' AND (actual_completion_date >= DATE_SUB(DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01'), INTERVAL 1 MONTH) AND actual_completion_date < DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01')) THEN 1 ELSE 0 END) as last_month
-        FROM projects
-    ");
-    $compTrend = $stmt->fetch();
-    $thisM = (int)($compTrend['this_month'] ?? 0);
-    $lastM = (int)($compTrend['last_month'] ?? 0);
-    if ($lastM > 0) {
-        $diff = round((($thisM - $lastM) / $lastM) * 100);
-        $completedTrendPct = abs($diff);
-        $completedTrendDirection = $diff >= 0 ? 'up' : 'down';
+        $stmt = $db->prepare("SELECT COUNT(*) FROM projects WHERE status = 'Completed' AND (
+            (actual_completion_date IS NOT NULL AND actual_completion_date BETWEEN ? AND ?) 
+            OR (actual_completion_date IS NULL AND DATE(updated_at) BETWEEN ? AND ?)
+        )");
+        $stmt->execute([$priorFrom, $priorTo, $priorFrom, $priorTo]);
+        $priorCount = (int)$stmt->fetchColumn();
+        if ($priorCount > 0) {
+            $diff = round((($completedProjectsCount - $priorCount) / $priorCount) * 100);
+            $completedTrendPct = abs($diff);
+            $completedTrendDirection = $diff >= 0 ? 'up' : 'down';
+        } else {
+            $completedTrendPct = $completedProjectsCount > 0 ? 100 : 0;
+            $completedTrendDirection = 'up';
+        }
     } else {
-        $completedTrendPct = $thisM > 0 ? 100 : 0;
-        $completedTrendDirection = 'up';
+        $stmt = $db->query("SELECT COUNT(*) FROM projects WHERE status = 'Completed'");
+        $completedProjectsCount = (int)$stmt->fetchColumn();
+
+        $stmt = $db->query("
+            SELECT 
+                SUM(CASE WHEN status = 'Completed' AND (actual_completion_date >= DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01') OR (actual_completion_date IS NULL AND updated_at >= DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01'))) THEN 1 ELSE 0 END) as this_month,
+                SUM(CASE WHEN status = 'Completed' AND (actual_completion_date >= DATE_SUB(DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01'), INTERVAL 1 MONTH) AND actual_completion_date < DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01')) THEN 1 ELSE 0 END) as last_month
+            FROM projects
+        ");
+        $compTrend = $stmt->fetch();
+        $thisM = (int)($compTrend['this_month'] ?? 0);
+        $lastM = (int)($compTrend['last_month'] ?? 0);
+        if ($lastM > 0) {
+            $diff = round((($thisM - $lastM) / $lastM) * 100);
+            $completedTrendPct = abs($diff);
+            $completedTrendDirection = $diff >= 0 ? 'up' : 'down';
+        } else {
+            $completedTrendPct = $thisM > 0 ? 100 : 0;
+            $completedTrendDirection = 'up';
+        }
     }
 } catch (Exception $e) {}
 
@@ -142,67 +257,117 @@ try {
 $totalInvoiced = 0.00;
 $totalReceived = 0.00;
 $pendingPayments = 0.00;
+$pendingTrendPct = 0;
+$pendingTrendDirection = 'down';
+
 try {
-    $stmt = $db->query("SELECT COALESCE(SUM(grand_total), 0) as invoiced, COALESCE(SUM(paid_amount), 0) as received, COALESCE(SUM(balance_amount), 0) as balance FROM invoices WHERE status != 'Cancelled'");
-    $fin = $stmt->fetch();
-    if ($fin) {
-        $totalInvoiced = (float)$fin['invoiced'];
-        $totalReceived = (float)$fin['received'];
-        $pendingPayments = (float)$fin['balance'];
+    if ($hasDateFilter) {
+        $stmt = $db->prepare("SELECT COALESCE(SUM(grand_total), 0) as invoiced, COALESCE(SUM(paid_amount), 0) as received, COALESCE(SUM(balance_amount), 0) as balance FROM invoices WHERE status != 'Cancelled' AND invoice_date BETWEEN ? AND ?");
+        $stmt->execute([$dateFrom, $dateTo]);
+        $fin = $stmt->fetch();
+        if ($fin) {
+            $totalInvoiced = (float)$fin['invoiced'];
+            $pendingPayments = (float)$fin['balance'];
+        }
+
+        $stmtPay = $db->prepare("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE payment_date BETWEEN ? AND ?");
+        $stmtPay->execute([$dateFrom, $dateTo]);
+        $totalReceived = (float)($stmtPay->fetchColumn() ?: 0);
+
+        $stmtPrior = $db->prepare("SELECT COALESCE(SUM(balance_amount), 0) FROM invoices WHERE status != 'Cancelled' AND invoice_date BETWEEN ? AND ?");
+        $stmtPrior->execute([$priorFrom, $priorTo]);
+        $priorPending = (float)($stmtPrior->fetchColumn() ?: 0);
+        if ($priorPending > 0) {
+            $diff = round((($pendingPayments - $priorPending) / $priorPending) * 100);
+            $pendingTrendPct = abs($diff);
+            $pendingTrendDirection = $diff <= 0 ? 'down' : 'up';
+        } else {
+            $pendingTrendPct = $pendingPayments > 0 ? 100 : 0;
+            $pendingTrendDirection = 'down';
+        }
+    } else {
+        $stmt = $db->query("SELECT COALESCE(SUM(grand_total), 0) as invoiced, COALESCE(SUM(paid_amount), 0) as received, COALESCE(SUM(balance_amount), 0) as balance FROM invoices WHERE status != 'Cancelled'");
+        $fin = $stmt->fetch();
+        if ($fin) {
+            $totalInvoiced = (float)$fin['invoiced'];
+            $totalReceived = (float)$fin['received'];
+            $pendingPayments = (float)$fin['balance'];
+        }
+
+        $stmt = $db->query("
+            SELECT 
+                COALESCE(SUM(CASE WHEN invoice_date >= DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01') THEN balance_amount ELSE 0 END), 0) as this_month_balance,
+                COALESCE(SUM(CASE WHEN invoice_date >= DATE_SUB(DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01'), INTERVAL 1 MONTH) 
+                                   AND invoice_date < DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01') THEN balance_amount ELSE 0 END), 0) as last_month_balance
+            FROM invoices WHERE status != 'Cancelled'
+        ");
+        $pTrend = $stmt->fetch();
+        $thisMB = (float)($pTrend['this_month_balance'] ?? 0);
+        $lastMB = (float)($pTrend['last_month_balance'] ?? 0);
+        if ($lastMB > 0) {
+            $diff = round((($thisMB - $lastMB) / $lastMB) * 100);
+            $pendingTrendPct = abs($diff);
+            $pendingTrendDirection = $diff <= 0 ? 'down' : 'up';
+        } else {
+            $pendingTrendPct = $thisMB > 0 ? 100 : 0;
+            $pendingTrendDirection = 'down';
+        }
     }
 } catch (Exception $e) {}
 
 $collectionRate = $totalInvoiced > 0 ? round(($totalReceived / $totalInvoiced) * 100) : 0;
-// Dynamic SVG circle stroke-dashoffset for Collection Rate (radius = 42, circumference ~ 263.89)
 $collectionDashoffset = 263.89 - (263.89 * ($collectionRate / 100));
 
-// Pending payments trend
-$pendingTrendPct = 0;
-$pendingTrendDirection = 'down';
-try {
-    $stmt = $db->query("
-        SELECT 
-            COALESCE(SUM(CASE WHEN invoice_date >= DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01') THEN balance_amount ELSE 0 END), 0) as this_month_balance,
-            COALESCE(SUM(CASE WHEN invoice_date >= DATE_SUB(DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01'), INTERVAL 1 MONTH) 
-                               AND invoice_date < DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01') THEN balance_amount ELSE 0 END), 0) as last_month_balance
-        FROM invoices WHERE status != 'Cancelled'
-    ");
-    $pTrend = $stmt->fetch();
-    $thisMB = (float)($pTrend['this_month_balance'] ?? 0);
-    $lastMB = (float)($pTrend['last_month_balance'] ?? 0);
-    if ($lastMB > 0) {
-        $diff = round((($thisMB - $lastMB) / $lastMB) * 100);
-        $pendingTrendPct = abs($diff);
-        $pendingTrendDirection = $diff <= 0 ? 'down' : 'up';
-    } else {
-        $pendingTrendPct = $thisMB > 0 ? 100 : 0;
-        $pendingTrendDirection = 'down';
-    }
-} catch (Exception $e) {}
-
-// 6. Enquiries vs Approved Projects (Past 6 Months Dynamic Query)
+// 6. Enquiries vs Approved Projects (Dynamic Chart.js Query)
 $chartMonths = [];
 $chartEnquiries = [];
 $chartApproved = [];
-for ($i = 5; $i >= 0; $i--) {
-    $d = new DateTime("first day of -$i month");
-    $mKey = $d->format('Y-m');
-    $chartMonths[] = $d->format('M');
-    
-    try {
-        $st = $db->prepare("SELECT COUNT(*) FROM enquiries WHERE DATE_FORMAT(created_at, '%Y-%m') = ?");
-        $st->execute([$mKey]);
-        $chartEnquiries[] = (int)$st->fetchColumn();
-    } catch (Exception $e) {
-        $chartEnquiries[] = 0;
+
+if ($hasDateFilter) {
+    $startMonth = new DateTime((new DateTime($dateFrom))->format('Y-m-01'));
+    $endMonth = new DateTime((new DateTime($dateTo))->format('Y-m-01'));
+    $curr = clone $startMonth;
+    $count = 0;
+    while ($curr <= $endMonth && $count < 12) {
+        $mKey = $curr->format('Y-m');
+        $chartMonths[] = $curr->format('M Y');
+
+        try {
+            $st = $db->prepare("SELECT COUNT(*) FROM enquiries WHERE DATE_FORMAT(created_at, '%Y-%m') = ?");
+            $st->execute([$mKey]);
+            $chartEnquiries[] = (int)$st->fetchColumn();
+        } catch (Exception $e) { $chartEnquiries[] = 0; }
+
+        try {
+            $st = $db->prepare("SELECT COUNT(*) FROM projects WHERE DATE_FORMAT(created_at, '%Y-%m') = ? AND status != 'Cancelled'");
+            $st->execute([$mKey]);
+            $chartApproved[] = (int)$st->fetchColumn();
+        } catch (Exception $e) { $chartApproved[] = 0; }
+
+        $curr->modify('+1 month');
+        $count++;
     }
-    
-    try {
-        $st = $db->prepare("SELECT COUNT(*) FROM projects WHERE DATE_FORMAT(created_at, '%Y-%m') = ? AND status != 'Cancelled'");
-        $st->execute([$mKey]);
-        $chartApproved[] = (int)$st->fetchColumn();
-    } catch (Exception $e) {
-        $chartApproved[] = 0;
+} else {
+    for ($i = 5; $i >= 0; $i--) {
+        $d = new DateTime("first day of -$i month");
+        $mKey = $d->format('Y-m');
+        $chartMonths[] = $d->format('M');
+        
+        try {
+            $st = $db->prepare("SELECT COUNT(*) FROM enquiries WHERE DATE_FORMAT(created_at, '%Y-%m') = ?");
+            $st->execute([$mKey]);
+            $chartEnquiries[] = (int)$st->fetchColumn();
+        } catch (Exception $e) {
+            $chartEnquiries[] = 0;
+        }
+        
+        try {
+            $st = $db->prepare("SELECT COUNT(*) FROM projects WHERE DATE_FORMAT(created_at, '%Y-%m') = ? AND status != 'Cancelled'");
+            $st->execute([$mKey]);
+            $chartApproved[] = (int)$st->fetchColumn();
+        } catch (Exception $e) {
+            $chartApproved[] = 0;
+        }
     }
 }
 
@@ -215,7 +380,15 @@ $statusCounts = [
     'Completed'   => 0
 ];
 try {
-    $stmt = $db->query("SELECT status, COUNT(*) as cnt FROM projects GROUP BY status");
+    if ($hasDateFilter) {
+        $stmt = $db->prepare("SELECT status, COUNT(*) as cnt FROM projects WHERE (
+            DATE(created_at) BETWEEN ? AND ? 
+            OR (start_date IS NOT NULL AND start_date BETWEEN ? AND ?)
+        ) GROUP BY status");
+        $stmt->execute([$dateFrom, $dateTo, $dateFrom, $dateTo]);
+    } else {
+        $stmt = $db->query("SELECT status, COUNT(*) as cnt FROM projects GROUP BY status");
+    }
     while ($row = $stmt->fetch()) {
         if (isset($statusCounts[$row['status']])) {
             $statusCounts[$row['status']] = (int)$row['cnt'];
@@ -224,22 +397,34 @@ try {
 } catch (Exception $e) {}
 $totalStatusProjects = array_sum($statusCounts);
 
-// 8. Team Workload (Real Hours / Person-days this month from work_logs & users)
+// 8. Team Workload (Real Hours / Person-days from work_logs & users)
 $workloadBars = [];
 $palette = ['#2563EB', '#38BDF8', '#E6B422', '#8B5CF6', '#10B981'];
 try {
-    $sql = "SELECT u.id, u.full_name, COALESCE(SUM(w.total_hours), 0) as total_hrs 
-            FROM users u 
-            LEFT JOIN work_logs w ON u.id = w.user_id 
-                AND MONTH(w.work_date) = MONTH(CURRENT_DATE()) 
-                AND YEAR(w.work_date) = YEAR(CURRENT_DATE())
-            WHERE u.employment_status = 'Active' 
-            GROUP BY u.id, u.full_name 
-            ORDER BY total_hrs DESC, u.id ASC LIMIT 5";
-    $stmt = $db->query($sql);
+    if ($hasDateFilter) {
+        $sql = "SELECT u.id, u.full_name, COALESCE(SUM(w.total_hours), 0) as total_hrs 
+                FROM users u 
+                LEFT JOIN work_logs w ON u.id = w.user_id 
+                    AND w.work_date BETWEEN ? AND ?
+                WHERE u.employment_status = 'Active' 
+                GROUP BY u.id, u.full_name 
+                ORDER BY total_hrs DESC, u.id ASC LIMIT 5";
+        $stmt = $db->prepare($sql);
+        $stmt->execute([$dateFrom, $dateTo]);
+    } else {
+        $sql = "SELECT u.id, u.full_name, COALESCE(SUM(w.total_hours), 0) as total_hrs 
+                FROM users u 
+                LEFT JOIN work_logs w ON u.id = w.user_id 
+                    AND MONTH(w.work_date) = MONTH(CURRENT_DATE()) 
+                    AND YEAR(w.work_date) = YEAR(CURRENT_DATE())
+                WHERE u.employment_status = 'Active' 
+                GROUP BY u.id, u.full_name 
+                ORDER BY total_hrs DESC, u.id ASC LIMIT 5";
+        $stmt = $db->query($sql);
+    }
     $usersWork = $stmt->fetchAll();
     
-    $maxExpectedHours = 160; // Standard monthly 20 working days @ 8h
+    $maxExpectedHours = 160;
     foreach ($usersWork as $idx => $uw) {
         $hrs = (float)$uw['total_hrs'];
         $days = round($hrs / 8, 1);
@@ -257,12 +442,23 @@ try {
 $activeProjects = [];
 $projectMembersMap = [];
 try {
-    $sql = "SELECT p.*, c.company_name, c.client_name 
-            FROM projects p 
-            LEFT JOIN clients c ON p.client_id = c.id 
-            WHERE p.status IN ('In Progress', 'Testing', 'Planning', 'Client Review')
-            ORDER BY p.id ASC LIMIT 5";
-    $stmt = $db->query($sql);
+    if ($hasDateFilter) {
+        $sql = "SELECT p.*, c.company_name, c.client_name 
+                FROM projects p 
+                LEFT JOIN clients c ON p.client_id = c.id 
+                WHERE p.status IN ('In Progress', 'Testing', 'Planning', 'Client Review')
+                  AND (DATE(p.created_at) <= ? AND (p.actual_completion_date IS NULL OR p.actual_completion_date >= ?))
+                ORDER BY p.id ASC LIMIT 5";
+        $stmt = $db->prepare($sql);
+        $stmt->execute([$dateTo, $dateFrom]);
+    } else {
+        $sql = "SELECT p.*, c.company_name, c.client_name 
+                FROM projects p 
+                LEFT JOIN clients c ON p.client_id = c.id 
+                WHERE p.status IN ('In Progress', 'Testing', 'Planning', 'Client Review')
+                ORDER BY p.id ASC LIMIT 5";
+        $stmt = $db->query($sql);
+    }
     $activeProjects = $stmt->fetchAll();
 
     if (!empty($activeProjects)) {
@@ -283,32 +479,63 @@ try {
 // 10. Project Timeline (Gantt View) from database
 $timelineProjects = [];
 try {
-    $tlSql = "SELECT p.id, p.project_name, p.start_date, p.expected_end_date, p.progress, p.status 
-              FROM projects p 
-              WHERE p.status NOT IN ('Cancelled')
-              ORDER BY p.start_date ASC LIMIT 4";
-    $timelineProjects = $db->query($tlSql)->fetchAll();
+    if ($hasDateFilter) {
+        $tlSql = "SELECT p.id, p.project_name, p.start_date, p.expected_end_date, p.progress, p.status 
+                  FROM projects p 
+                  WHERE p.status NOT IN ('Cancelled')
+                    AND (p.start_date <= ? AND (p.expected_end_date IS NULL OR p.expected_end_date >= ?))
+                  ORDER BY p.start_date ASC LIMIT 4";
+        $stmt = $db->prepare($tlSql);
+        $stmt->execute([$dateTo, $dateFrom]);
+        $timelineProjects = $stmt->fetchAll();
+    } else {
+        $tlSql = "SELECT p.id, p.project_name, p.start_date, p.expected_end_date, p.progress, p.status 
+                  FROM projects p 
+                  WHERE p.status NOT IN ('Cancelled')
+                  ORDER BY p.start_date ASC LIMIT 4";
+        $timelineProjects = $db->query($tlSql)->fetchAll();
+    }
 } catch (Exception $e) {}
 
 // 11. Recent Enquiries (Dynamic from database)
 $recentEnquiries = [];
 try {
-    $sql = "SELECT e.*, c.company_name, c.client_name 
-            FROM enquiries e 
-            LEFT JOIN clients c ON e.client_id = c.id 
-            ORDER BY e.id DESC LIMIT 4";
-    $stmt = $db->query($sql);
+    if ($hasDateFilter) {
+        $sql = "SELECT e.*, c.company_name, c.client_name 
+                FROM enquiries e 
+                LEFT JOIN clients c ON e.client_id = c.id 
+                WHERE (DATE(e.created_at) BETWEEN ? AND ? OR (e.enquiry_date IS NOT NULL AND e.enquiry_date BETWEEN ? AND ?))
+                ORDER BY e.id DESC LIMIT 4";
+        $stmt = $db->prepare($sql);
+        $stmt->execute([$dateFrom, $dateTo, $dateFrom, $dateTo]);
+    } else {
+        $sql = "SELECT e.*, c.company_name, c.client_name 
+                FROM enquiries e 
+                LEFT JOIN clients c ON e.client_id = c.id 
+                ORDER BY e.id DESC LIMIT 4";
+        $stmt = $db->query($sql);
+    }
     $recentEnquiries = $stmt->fetchAll();
 } catch (Exception $e) {}
 
 // 12. Recent Activities (Dynamic from activity_logs)
 $recentActivities = [];
 try {
-    $sql = "SELECT a.*, u.full_name 
-            FROM activity_logs a 
-            LEFT JOIN users u ON a.user_id = u.id 
-            ORDER BY a.created_at DESC LIMIT 4";
-    $stmt = $db->query($sql);
+    if ($hasDateFilter) {
+        $sql = "SELECT a.*, u.full_name 
+                FROM activity_logs a 
+                LEFT JOIN users u ON a.user_id = u.id 
+                WHERE DATE(a.created_at) BETWEEN ? AND ?
+                ORDER BY a.created_at DESC LIMIT 4";
+        $stmt = $db->prepare($sql);
+        $stmt->execute([$dateFrom, $dateTo]);
+    } else {
+        $sql = "SELECT a.*, u.full_name 
+                FROM activity_logs a 
+                LEFT JOIN users u ON a.user_id = u.id 
+                ORDER BY a.created_at DESC LIMIT 4";
+        $stmt = $db->query($sql);
+    }
     $recentActivities = $stmt->fetchAll();
 } catch (Exception $e) {}
 
@@ -317,6 +544,65 @@ include __DIR__ . '/includes/header.php';
 
 <main class="app-main">
     <div class="container-fluid px-0">
+
+        <!-- DASHBOARD DATE RANGE FILTER TOOLBAR -->
+        <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 bg-white">
+            <form method="GET" action="dashboard.php" id="dashboardFilterForm">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                    <!-- Left: Label & Presets -->
+                    <div class="d-flex align-items-center flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-2 me-2">
+                            <div class="bg-primary-subtle text-primary p-2 rounded-3 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                <i data-lucide="calendar" style="width: 18px; height: 18px; color: #2563EB;"></i>
+                            </div>
+                            <div>
+                                <span class="fw-bold text-dark fs-6 d-block" style="line-height: 1.2;">Date Filter</span>
+                                <span class="small text-muted" style="font-size: 0.75rem;">Filter analytics & performance</span>
+                            </div>
+                        </div>
+
+                        <!-- Quick Presets -->
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-light border preset-btn" onclick="applyPreset('today')">Today</button>
+                            <button type="button" class="btn btn-light border preset-btn" onclick="applyPreset('this_month')">This Month</button>
+                            <button type="button" class="btn btn-light border preset-btn" onclick="applyPreset('last_month')">Last Month</button>
+                            <button type="button" class="btn btn-light border preset-btn" onclick="applyPreset('this_quarter')">Quarter</button>
+                            <button type="button" class="btn btn-light border preset-btn" onclick="applyPreset('this_year')">This Year</button>
+                            <button type="button" class="btn btn-light border preset-btn" onclick="applyPreset('all')">All Time</button>
+                        </div>
+                    </div>
+
+                    <!-- Right: From & To Date Inputs + Action Buttons -->
+                    <div class="d-flex align-items-center flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-1">
+                            <span class="small text-muted fw-bold text-uppercase" style="font-size: 0.72rem;">From:</span>
+                            <input type="date" name="date_from" id="filterDateFrom" class="form-control form-control-sm" style="width: 145px; border-radius: 8px;" value="<?= e($dateFrom) ?>">
+                        </div>
+                        <div class="d-flex align-items-center gap-1">
+                            <span class="small text-muted fw-bold text-uppercase" style="font-size: 0.72rem;">To:</span>
+                            <input type="date" name="date_to" id="filterDateTo" class="form-control form-control-sm" style="width: 145px; border-radius: 8px;" value="<?= e($dateTo) ?>">
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-primary-navy px-3 d-flex align-items-center gap-1" style="border-radius: 8px; background: #2563EB; font-weight: 600;">
+                            <i data-lucide="filter" style="width: 14px; height: 14px;"></i> Apply Filter
+                        </button>
+                        <?php if ($hasDateFilter): ?>
+                            <a href="dashboard.php" class="btn btn-sm btn-light border d-flex align-items-center gap-1 text-danger" style="border-radius: 8px;" title="Reset Date Filter">
+                                <i data-lucide="x" style="width: 14px; height: 14px;"></i> Clear
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <?php if ($hasDateFilter): ?>
+                    <div class="d-flex align-items-center gap-2 mt-2 pt-2 border-top small text-muted">
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-1">
+                            <i data-lucide="check" style="width: 12px; height: 12px;" class="me-1"></i> Active Date Range: <?= formatDate($dateFrom) ?> &mdash; <?= formatDate($dateTo) ?>
+                        </span>
+                        <span class="text-secondary small">&bull; All top metrics, charts, finances, and pipeline reflect this period</span>
+                    </div>
+                <?php endif; ?>
+            </form>
+        </div>
 
         <!-- ROW 1: 5 SUMMARY METRIC CARDS -->
         <div class="row g-3 mb-4">
@@ -335,7 +621,7 @@ include __DIR__ . '/includes/header.php';
                     <div class="metric-value"><?= number_format($totalEnquiries) ?></div>
                     <div class="metric-trend">
                         <span class="trend-<?= $enquiryTrendDirection ?>"><?= $enquiryTrendDirection === 'up' ? '&uarr; +' : '&darr; -' ?><?= $enquiryTrendPct ?>%</span>
-                        <span class="trend-period">vs last month</span>
+                        <span class="trend-period"><?= $trendPeriodText ?></span>
                     </div>
                 </div>
             </div>
@@ -355,7 +641,7 @@ include __DIR__ . '/includes/header.php';
                     <div class="metric-value"><?= number_format($approvedProjectsCount) ?></div>
                     <div class="metric-trend">
                         <span class="trend-<?= $approvedTrendDirection ?>"><?= $approvedTrendDirection === 'up' ? '&uarr; +' : '&darr; -' ?><?= $approvedTrendPct ?>%</span>
-                        <span class="trend-period">vs last month</span>
+                        <span class="trend-period"><?= $trendPeriodText ?></span>
                     </div>
                 </div>
             </div>
@@ -375,7 +661,7 @@ include __DIR__ . '/includes/header.php';
                     <div class="metric-value"><?= number_format($activeProjectsCount) ?></div>
                     <div class="metric-trend">
                         <span class="trend-<?= $activeTrendDirection ?>"><?= $activeTrendDirection === 'up' ? '&uarr; +' : '&darr; -' ?><?= $activeTrendPct ?>%</span>
-                        <span class="trend-period">vs last month</span>
+                        <span class="trend-period"><?= $trendPeriodText ?></span>
                     </div>
                 </div>
             </div>
@@ -395,7 +681,7 @@ include __DIR__ . '/includes/header.php';
                     <div class="metric-value"><?= number_format($completedProjectsCount) ?></div>
                     <div class="metric-trend">
                         <span class="trend-<?= $completedTrendDirection ?>"><?= $completedTrendDirection === 'up' ? '&uarr; +' : '&darr; -' ?><?= $completedTrendPct ?>%</span>
-                        <span class="trend-period">vs last month</span>
+                        <span class="trend-period"><?= $trendPeriodText ?></span>
                     </div>
                 </div>
             </div>
@@ -415,7 +701,7 @@ include __DIR__ . '/includes/header.php';
                     <div class="metric-value"><?= formatCurrency($pendingPayments) ?></div>
                     <div class="metric-trend">
                         <span class="trend-<?= $pendingTrendDirection ?>"><?= $pendingTrendDirection === 'up' ? '&uarr; +' : '&darr; -' ?><?= $pendingTrendPct ?>%</span>
-                        <span class="trend-period">vs last month</span>
+                        <span class="trend-period"><?= $trendPeriodText ?></span>
                     </div>
                 </div>
             </div>
@@ -921,6 +1207,48 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 });
+
+function applyPreset(preset) {
+    const fromInput = document.getElementById('filterDateFrom');
+    const toInput = document.getElementById('filterDateTo');
+    const form = document.getElementById('dashboardFilterForm');
+    if (!fromInput || !toInput || !form) return;
+    
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const formatYMD = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+    if (preset === 'today') {
+        const todayStr = formatYMD(now);
+        fromInput.value = todayStr;
+        toInput.value = todayStr;
+    } else if (preset === 'this_month') {
+        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        fromInput.value = formatYMD(firstDay);
+        toInput.value = formatYMD(lastDay);
+    } else if (preset === 'last_month') {
+        const firstDay = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const lastDay = new Date(now.getFullYear(), now.getMonth(), 0);
+        fromInput.value = formatYMD(firstDay);
+        toInput.value = formatYMD(lastDay);
+    } else if (preset === 'this_quarter') {
+        const quarterStartMonth = Math.floor(now.getMonth() / 3) * 3;
+        const firstDay = new Date(now.getFullYear(), quarterStartMonth, 1);
+        const lastDay = new Date(now.getFullYear(), quarterStartMonth + 3, 0);
+        fromInput.value = formatYMD(firstDay);
+        toInput.value = formatYMD(lastDay);
+    } else if (preset === 'this_year') {
+        const firstDay = new Date(now.getFullYear(), 0, 1);
+        const lastDay = new Date(now.getFullYear(), 11, 31);
+        fromInput.value = formatYMD(firstDay);
+        toInput.value = formatYMD(lastDay);
+    } else if (preset === 'all') {
+        fromInput.value = '';
+        toInput.value = '';
+    }
+    form.submit();
+}
 </script>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>
