@@ -145,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$defaultTerms = "1. 50% advance along with confirmed work order / approval.\n2. 30% after staging/UAT review and approval.\n3. 20% on final production deployment and handover.\n4. Proposal valid for 30 calendar days.\n5. Standard 3 months bug-fix warranty included.";
+$defaultTerms = "1. 50% advance along with confirmed work order / approval.\n2. 30% after staging/UAT review and approval.\n3. 20% on final production deployment and handover.\n4. Proposal valid for 30 calendar days.\n5. Standard 6 months bug-fix warranty included.";
 
 include __DIR__ . '/../../includes/header.php';
 ?>

@@ -57,6 +57,7 @@ $whereClause = implode(" AND ", $where);
 $totalProjects = 0;
 $inProgressCount = 0;
 $testingCount = 0;
+$activeCount = 0;
 $planningCount = 0;
 $completedCount = 0;
 $totalBudget = 0;
@@ -65,6 +66,7 @@ try {
     $totalProjects = (int)$db->query("SELECT COUNT(*) FROM projects WHERE status != 'Cancelled'")->fetchColumn();
     $inProgressCount = (int)$db->query("SELECT COUNT(*) FROM projects WHERE status = 'In Progress'")->fetchColumn();
     $testingCount = (int)$db->query("SELECT COUNT(*) FROM projects WHERE status = 'Testing'")->fetchColumn();
+    $activeCount = $inProgressCount + $testingCount;
     $planningCount = (int)$db->query("SELECT COUNT(*) FROM projects WHERE status = 'Planning'")->fetchColumn();
     $completedCount = (int)$db->query("SELECT COUNT(*) FROM projects WHERE status = 'Completed'")->fetchColumn();
     $totalBudget = (float)$db->query("SELECT COALESCE(SUM(budget), 0) FROM projects WHERE status != 'Cancelled'")->fetchColumn();

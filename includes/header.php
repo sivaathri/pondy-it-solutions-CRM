@@ -46,7 +46,7 @@ if ($db && $currentUser) {
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 
     <!-- Custom Design System Stylesheet -->
-    <link rel="stylesheet" href="<?= getBaseUrl() ?>assets/css/style.css?v=2.5">
+    <link rel="stylesheet" href="<?= getBaseUrl() ?>assets/css/style.css?v=<?= @filemtime(__DIR__ . '/../assets/css/style.css') ?: time() ?>">
     
     <script>
         window.APP_BASE_URL = '<?= getBaseUrl() ?>';
