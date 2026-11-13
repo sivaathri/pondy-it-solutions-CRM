@@ -127,6 +127,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         }
+
+        // 5. Add Project URL
+        if ($action === 'add_url') {
+            $urlType = trim($_POST['url_type'] ?? 'Production');
+            $urlTitle = trim($_POST['url_title'] ?? '');
+            $urlVal = trim($_POST['url'] ?? '');
+            if (!empty($urlVal)) {
+                if (!preg_match('~^(?:f|ht)tps?://~i', $urlVal)) {
+                    $urlVal = 'https://' . $urlVal;
+                }
+                $stmtU = $db->prepare("INSERT INTO project_urls (project_id, url_type, title, url) VALUES (?, ?, ?, ?)");
+                $stmtU->execute([$id, $urlType, $urlTitle, $urlVal]);
+                logActivity(getCurrentUserId(), 'projects', 'add_url', "Added {$urlType} URL: {$urlVal}", $id);
+                setFlash('success', "Project URL saved successfully.");
+                header("Location: view.php?id={$id}&tab=overview");
+                exit;
+            } else {
+                $actionError = "Please enter a valid URL.";
+            }
+        }
+
+        // 6. Delete Project URL
+        if ($action === 'delete_url') {
+            $urlId = (int)($_POST['url_id'] ?? 0);
+            if ($urlId > 0) {
+                $stmtU = $db->prepare("DELETE FROM project_urls WHERE id = ? AND project_id = ?");
+                $stmtU->execute([$urlId, $id]);
+                logActivity(getCurrentUserId(), 'projects', 'delete_url', "Removed Project URL ID {$urlId}", $id);
+                setFlash('success', "Project URL removed.");
+                header("Location: view.php?id={$id}&tab=overview");
+                exit;
+            }
+        }
     }
 }
 
@@ -230,6 +263,14 @@ try {
     $files = $stmt->fetchAll();
 } catch (Exception $e) {}
 
+// Project URLs
+$projectUrls = [];
+try {
+    $stmt = $db->prepare("SELECT * FROM project_urls WHERE project_id = ? ORDER BY created_at ASC, id ASC");
+    $stmt->execute([$id]);
+    $projectUrls = $stmt->fetchAll();
+} catch (Exception $e) {}
+
 // Invoices & Payments for this project
 $invoices = [];
 $totalProjectInvoiced = 0;
@@ -280,7 +321,24 @@ include __DIR__ . '/../../includes/header.php';
                     <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i> Back to Projects
                 </a>
             </div>
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 flex-wrap">
+                <?php
+                $primaryLiveUrl = null;
+                foreach ($projectUrls as $u) {
+                    if (in_array($u['url_type'], ['Production', 'Demo', 'Testing'])) {
+                        $primaryLiveUrl = $u['url'];
+                        break;
+                    }
+                }
+                if (!$primaryLiveUrl && !empty($projectUrls)) {
+                    $primaryLiveUrl = $projectUrls[0]['url'];
+                }
+                ?>
+                <?php if ($primaryLiveUrl): ?>
+                    <a href="<?= e($primaryLiveUrl) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-success fw-bold d-inline-flex align-items-center gap-1" style="border-radius: 9999px;">
+                        <i data-lucide="external-link" style="width: 14px; height: 14px;"></i> Live Site
+                    </a>
+                <?php endif; ?>
                 <a href="<?= getBaseUrl() ?>modules/tasks/add.php?project_id=<?= $id ?>" class="btn btn-sm btn-light border">
                     <i data-lucide="plus-circle" style="width: 14px; height: 14px;"></i> Add Task
                 </a>
@@ -462,6 +520,133 @@ include __DIR__ . '/../../includes/header.php';
                                             <?php endforeach; ?>
                                         <?php endif; ?>
                                     </div>
+                                </div>
+
+                                <!-- Environment & Deployment URLs Card -->
+                                <div class="card border rounded-3 p-3 mb-4 bg-white shadow-sm" id="urls-section">
+                                    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; border-radius: 8px; background: rgba(37, 99, 235, 0.1); color: #2563EB;">
+                                                <i data-lucide="globe" style="width: 18px; height: 18px;"></i>
+                                            </div>
+                                            <div>
+                                                <h6 class="fw-bold text-dark mb-0 fs-6">Environment & Deployment URLs</h6>
+                                                <span class="text-muted" style="font-size: 0.72rem;">Live, Testing, Staging, Repositories & Docs</span>
+                                            </div>
+                                            <span class="badge bg-light text-secondary border rounded-pill small ms-1"><?= count($projectUrls) ?></span>
+                                        </div>
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" style="border-radius: 9999px; font-size: 0.78rem; font-weight: 600;" type="button" data-bs-toggle="collapse" data-bs-target="#addUrlCollapse" aria-expanded="false">
+                                                <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Add URL
+                                            </button>
+                                            <a href="edit.php?id=<?= $id ?>#urls-container" class="btn btn-sm btn-light border d-inline-flex align-items-center gap-1" style="border-radius: 9999px; font-size: 0.78rem;">
+                                                <i data-lucide="edit-2" style="width: 13px; height: 13px;"></i> Manage in Edit
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    <!-- Quick Add URL Form (Collapse) -->
+                                    <div class="collapse mb-3" id="addUrlCollapse">
+                                        <div class="p-3 rounded-3 border" style="background: #F8FAFC;">
+                                            <form method="POST" action="view.php?id=<?= $id ?>&tab=overview">
+                                                <?= csrf_field() ?>
+                                                <input type="hidden" name="action" value="add_url">
+                                                <div class="row g-2 mb-2">
+                                                    <div class="col-md-3">
+                                                        <label class="form-label" style="font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #475569;">Environment <span class="text-danger">*</span></label>
+                                                        <select name="url_type" class="form-select form-select-sm" style="border-radius: 10px; border: 1.5px solid #CBD5E1;" required>
+                                                            <option value="Production">Production (Live)</option>
+                                                            <option value="Testing">Testing / QA</option>
+                                                            <option value="Demo">Demo / Preview</option>
+                                                            <option value="Staging">Staging</option>
+                                                            <option value="Development">Development</option>
+                                                            <option value="Repository">Repository (Git)</option>
+                                                            <option value="Figma">Figma / Design</option>
+                                                            <option value="Documentation">Documentation</option>
+                                                            <option value="Other">Other</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label" style="font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #475569;">Label / Title <span class="text-muted fw-normal">(optional)</span></label>
+                                                        <input type="text" name="url_title" class="form-control form-control-sm" placeholder="e.g. Client UAT Portal" style="border-radius: 10px; border: 1.5px solid #CBD5E1;">
+                                                    </div>
+                                                    <div class="col-md-5">
+                                                        <label class="form-label" style="font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #475569;">URL Link <span class="text-danger">*</span></label>
+                                                        <input type="text" name="url" class="form-control form-control-sm" placeholder="https://app.example.com" style="border-radius: 10px; border: 1.5px solid #CBD5E1;" required>
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex justify-content-end gap-2">
+                                                    <button type="button" class="btn btn-sm" style="background: #EBF0F7; color: #334155; border-radius: 14px; font-weight: 600; padding: 6px 18px;" data-bs-toggle="collapse" data-bs-target="#addUrlCollapse">Cancel</button>
+                                                    <button type="submit" class="btn btn-sm btn-primary-navy" style="background: #2563EB; border-radius: 14px; font-weight: 600; padding: 6px 20px;">
+                                                        <i data-lucide="check" style="width: 14px; height: 14px;"></i> Save URL
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+
+                                    <!-- URLs Listing -->
+                                    <?php if (empty($projectUrls)): ?>
+                                        <div class="text-center py-4 px-3 border border-dashed rounded-3" style="background: #F8FAFC;">
+                                            <i data-lucide="link" class="text-muted mb-2" style="width: 28px; height: 28px;"></i>
+                                            <div class="fw-bold text-dark small">No URLs registered yet</div>
+                                            <p class="text-muted small mb-2" style="font-size: 0.78rem;">Keep track of your live production, QA testing, demo previews, and repository links in one place.</p>
+                                            <button class="btn btn-sm btn-primary-navy" style="border-radius: 9999px; font-size: 0.75rem;" data-bs-toggle="collapse" data-bs-target="#addUrlCollapse">
+                                                <i data-lucide="plus" style="width: 13px; height: 13px;"></i> Add First URL
+                                            </button>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="d-flex flex-column gap-2">
+                                            <?php foreach ($projectUrls as $u): ?>
+                                                <?php
+                                                $env = $u['url_type'];
+                                                $badgeStyle = 'background: #F1F5F9; color: #334155; border: 1px solid #CBD5E1;';
+                                                if ($env === 'Production') $badgeStyle = 'background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0;';
+                                                elseif ($env === 'Testing') $badgeStyle = 'background: #F3E8FF; color: #6B21A8; border: 1px solid #E9D5FF;';
+                                                elseif ($env === 'Demo') $badgeStyle = 'background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A;';
+                                                elseif ($env === 'Staging') $badgeStyle = 'background: #E0F2FE; color: #075985; border: 1px solid #BAE6FD;';
+                                                elseif ($env === 'Development') $badgeStyle = 'background: #DBEAFE; color: #1E40AF; border: 1px solid #BFDBFE;';
+                                                elseif ($env === 'Figma') $badgeStyle = 'background: #FCE7F3; color: #9D174D; border: 1px solid #FBCFE8;';
+                                                elseif ($env === 'Documentation') $badgeStyle = 'background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0;';
+                                                $savedDateFormatted = date('d M Y', strtotime($u['created_at']));
+                                                ?>
+                                                <div class="p-2 px-3 border rounded-3 bg-white d-flex align-items-center justify-content-between flex-wrap gap-2 hover-shadow-sm transition">
+                                                    <div class="d-flex align-items-center gap-2 flex-wrap" style="min-width: 240px; flex: 1;">
+                                                        <span class="badge rounded-pill fw-bold" style="<?= $badgeStyle ?> font-size: 0.72rem; padding: 4px 10px; letter-spacing: 0.03em;">
+                                                            <?= e($env) ?>
+                                                        </span>
+                                                        <?php if (!empty($u['title'])): ?>
+                                                            <span class="fw-bold text-dark small"><?= e($u['title']) ?></span>
+                                                            <span class="text-muted small">&bull;</span>
+                                                        <?php endif; ?>
+                                                        <a href="<?= e($u['url']) ?>" target="_blank" rel="noopener noreferrer" class="text-decoration-none small text-primary fw-medium d-inline-flex align-items-center gap-1 text-break">
+                                                            <?= e($u['url']) ?>
+                                                            <i data-lucide="external-link" style="width: 12px; height: 12px; flex-shrink: 0;"></i>
+                                                        </a>
+                                                    </div>
+
+                                                    <div class="d-flex align-items-center gap-3">
+                                                        <span class="badge bg-light text-secondary border rounded-pill d-inline-flex align-items-center gap-1" style="font-size: 0.7rem; font-weight: 500;">
+                                                            <i data-lucide="calendar" style="width: 11px; height: 11px;"></i> Saved <?= $savedDateFormatted ?>
+                                                        </span>
+                                                        <div class="d-flex align-items-center gap-1">
+                                                            <button type="button" class="btn btn-sm btn-light border py-1 px-2 d-inline-flex align-items-center gap-1" style="border-radius: 8px; font-size: 0.72rem;" onclick="copyUrlToClipboard('<?= addslashes(e($u['url'])) ?>', this)" title="Copy URL">
+                                                                <i data-lucide="copy" style="width: 12px; height: 12px;"></i> Copy
+                                                            </button>
+                                                            <form method="POST" action="view.php?id=<?= $id ?>&tab=overview" onsubmit="return confirm('Are you sure you want to remove this URL?');" class="d-inline mb-0">
+                                                                <?= csrf_field() ?>
+                                                                <input type="hidden" name="action" value="delete_url">
+                                                                <input type="hidden" name="url_id" value="<?= $u['id'] ?>">
+                                                                <button type="submit" class="btn btn-sm btn-light text-danger border-0 p-1" title="Delete URL" style="border-radius: 8px;">
+                                                                    <i data-lucide="trash-2" style="width: 13px; height: 13px;"></i>
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
 
@@ -1015,6 +1200,42 @@ include __DIR__ . '/../../includes/header.php';
 
     </div>
 </main>
+
+<script>
+function copyUrlToClipboard(text, btnElement) {
+    if (!text) return;
+    function showSuccess() {
+        var originalHtml = btnElement.innerHTML;
+        btnElement.innerHTML = '<i data-lucide="check" style="width: 12px; height: 12px; color: #16a34a;"></i> <span style="color: #16a34a; font-weight: 700;">Copied!</span>';
+        if (window.lucide) lucide.createIcons();
+        setTimeout(function() {
+            btnElement.innerHTML = originalHtml;
+            if (window.lucide) lucide.createIcons();
+        }, 1800);
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(showSuccess).catch(function() {
+            fallbackCopy(text, showSuccess);
+        });
+    } else {
+        fallbackCopy(text, showSuccess);
+    }
+}
+function fallbackCopy(text, callback) {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try {
+        document.execCommand('copy');
+        if (callback) callback();
+    } catch (e) {}
+    document.body.removeChild(ta);
+}
+</script>
 
 <?php include __DIR__ . '/../../includes/footer.php'; ?>
 

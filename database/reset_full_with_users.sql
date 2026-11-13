@@ -22,6 +22,7 @@ TRUNCATE TABLE work_logs;
 TRUNCATE TABLE task_comments;
 TRUNCATE TABLE task_assignments;
 TRUNCATE TABLE tasks;
+TRUNCATE TABLE project_urls;
 TRUNCATE TABLE project_files;
 TRUNCATE TABLE project_requirements;
 TRUNCATE TABLE project_members;

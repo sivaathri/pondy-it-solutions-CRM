@@ -36,6 +36,11 @@ $error = '';
 $clients = $db->query("SELECT id, client_code, client_name, company_name FROM clients ORDER BY company_name ASC")->fetchAll();
 $employees = $db->query("SELECT id, full_name, designation FROM users WHERE employment_status = 'Active' ORDER BY full_name ASC")->fetchAll();
 
+// Fetch existing project URLs
+$stmtUrls = $db->prepare("SELECT * FROM project_urls WHERE project_id = ? ORDER BY id ASC");
+$stmtUrls->execute([$id]);
+$existingUrls = $stmtUrls->fetchAll();
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
         $error = 'Invalid security token.';
@@ -90,8 +95,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $db->prepare("INSERT IGNORE INTO project_members (project_id, user_id, role_in_project) VALUES (?, ?, 'Project Manager')")->execute([$id, $projectManagerId]);
                 }
 
+                // Handle Project URLs (Update existing, Insert new, Delete removed)
+                if (isset($_POST['project_urls']) && is_array($_POST['project_urls'])) {
+                    $keptIds = [];
+                    $stmtInsertU = $db->prepare("INSERT INTO project_urls (project_id, url_type, title, url, created_at) VALUES (?, ?, ?, ?, NOW())");
+                    $stmtUpdateU = $db->prepare("UPDATE project_urls SET url_type = ?, title = ?, url = ? WHERE id = ? AND project_id = ?");
+
+                    foreach ($_POST['project_urls'] as $urlRow) {
+                        $uUrl = trim($urlRow['url'] ?? '');
+                        $uType = trim($urlRow['type'] ?? 'Production');
+                        $uTitle = trim($urlRow['title'] ?? '');
+                        $uId = (int)($urlRow['id'] ?? 0);
+
+                        if (!empty($uUrl)) {
+                            if ($uId > 0) {
+                                $stmtUpdateU->execute([$uType, $uTitle, $uUrl, $uId, $id]);
+                                $keptIds[] = $uId;
+                            } else {
+                                $stmtInsertU->execute([$id, $uType, $uTitle, $uUrl]);
+                                $keptIds[] = (int)$db->lastInsertId();
+                            }
+                        }
+                    }
+
+                    if (!empty($keptIds)) {
+                        $inPlaceholders = implode(',', array_fill(0, count($keptIds), '?'));
+                        $stmtDelU = $db->prepare("DELETE FROM project_urls WHERE project_id = ? AND id NOT IN ($inPlaceholders)");
+                        $stmtDelU->execute(array_merge([$id], $keptIds));
+                    } else {
+                        $db->prepare("DELETE FROM project_urls WHERE project_id = ?")->execute([$id]);
+                    }
+                }
+
                 logActivity(getCurrentUserId(), 'projects', 'edit', "Updated project {$project['project_code']}: {$projectName}", $id);
-                setFlash('success', 'Project details updated successfully.');
+                setFlash('success', 'Project details and deployment URLs updated successfully.');
                 header("Location: view.php?id=" . $id);
                 exit;
             } catch (Exception $e) {
@@ -171,20 +208,27 @@ include __DIR__ . '/../../includes/header.php';
 
                     <div class="row g-3 mb-3">
                         <div class="col-md-4">
-                            <label class="form-label">Start Date <span class="text-danger">*</span></label>
-                            <input type="date" name="start_date" class="form-control" value="<?= e($project['start_date']) ?>" required>
+                            <label class="form-label">Start Date <span class="text-danger">*</span> <span class="label-hint">DD/MM/YYYY</span></label>
+                            <input type="date" name="start_date" id="startDate" class="form-control" value="<?= e($project['start_date']) ?>" required>
+                            <div class="form-helper" id="startDatePreview">Date Month Year: <?= date('d M Y', strtotime($project['start_date'])) ?></div>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Expected End Date <span class="text-danger">*</span></label>
-                            <input type="date" name="expected_end_date" class="form-control" value="<?= e($project['expected_end_date']) ?>" required>
+                            <label class="form-label">Expected End Date <span class="text-danger">*</span> <span class="label-hint">DD/MM/YYYY</span></label>
+                            <input type="date" name="expected_end_date" id="endDate" class="form-control" value="<?= e($project['expected_end_date']) ?>" required>
+                            <div class="form-helper" id="endDatePreview">Date Month Year: <?= date('d M Y', strtotime($project['expected_end_date'])) ?></div>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Actual Completion Date</label>
-                            <input type="date" name="actual_completion_date" class="form-control" value="<?= e($project['actual_completion_date']) ?>">
+                            <label class="form-label">Estimated Days <span class="label-hint">AUTO-CALCULATES</span></label>
+                            <input type="number" name="estimated_days" id="estimatedDays" class="form-control" value="<?= (int)$project['estimated_days'] ?>" min="0">
+                            <div class="form-helper text-primary"><i data-lucide="calculator" style="width: 12px; height: 12px;"></i> Auto-calculates End Date from Start Date</div>
                         </div>
                     </div>
 
                     <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Actual Completion Date <span class="label-hint">DD/MM/YYYY</span></label>
+                            <input type="date" name="actual_completion_date" class="form-control" value="<?= e($project['actual_completion_date']) ?>">
+                        </div>
                         <div class="col-md-4">
                             <label class="form-label">Budget (<?= CURRENCY_SYMBOL ?>) <span class="text-danger">*</span></label>
                             <input type="number" step="0.01" name="budget" class="form-control" value="<?= (float)$project['budget'] ?>" required>
@@ -192,10 +236,6 @@ include __DIR__ . '/../../includes/header.php';
                         <div class="col-md-4">
                             <label class="form-label">Advance Received (<?= CURRENCY_SYMBOL ?>)</label>
                             <input type="number" step="0.01" name="advance_amount" class="form-control" value="<?= (float)$project['advance_amount'] ?>">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Estimated Days</label>
-                            <input type="number" name="estimated_days" class="form-control" value="<?= (int)$project['estimated_days'] ?>">
                         </div>
                     </div>
 
@@ -238,6 +278,101 @@ include __DIR__ . '/../../includes/header.php';
                         <textarea name="description" class="form-control" rows="3"><?= e($project['description']) ?></textarea>
                     </div>
 
+                    <!-- Dynamic Environment & Project URLs Section -->
+                    <div class="mt-4 pt-3 border-top mb-4">
+                        <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                            <div>
+                                <h5 class="fw-bold mb-1" style="font-size: 15px; color: #0F172A;">
+                                    <i data-lucide="globe" style="width: 17px; height: 17px;" class="me-1 text-primary"></i> Project URLs & Environments (Production, Testing, Demo, etc.)
+                                </h5>
+                                <div class="text-muted small">Manage live URLs for this project. Shows the date when each URL was saved. Click "Add Another URL" to insert more rows.</div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-light border" id="btnAddUrlRow">
+                                <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Add Another URL
+                            </button>
+                        </div>
+
+                        <div id="projectUrlsContainer" class="d-flex flex-column gap-3">
+                            <?php if (!empty($existingUrls)): ?>
+                                <?php foreach ($existingUrls as $idx => $urlItem): ?>
+                                    <div class="p-3 bg-light rounded-3 border project-url-row position-relative">
+                                        <input type="hidden" name="project_urls[<?= $idx ?>][id]" value="<?= (int)$urlItem['id'] ?>">
+                                        <div class="row g-2 align-items-center">
+                                            <div class="col-md-3">
+                                                <label class="form-label" style="font-size: 10.5px;">Environment Type</label>
+                                                <select name="project_urls[<?= $idx ?>][type]" class="form-select form-select-sm">
+                                                    <?php 
+                                                    $urlTypes = ['Production' => 'Production (Live)', 'Testing' => 'Testing / QA', 'Demo' => 'Demo / Preview', 'Staging' => 'Staging', 'Development' => 'Development', 'Repository' => 'Repository (Git)', 'Figma' => 'Figma / UI Design', 'Documentation' => 'Documentation', 'Other' => 'Other'];
+                                                    foreach ($urlTypes as $typeKey => $typeLabel): ?>
+                                                        <option value="<?= $typeKey ?>" <?= $urlItem['url_type'] === $typeKey ? 'selected' : '' ?>><?= $typeLabel ?></option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label" style="font-size: 10.5px;">Title / Label (Optional)</label>
+                                                <input type="text" name="project_urls[<?= $idx ?>][title]" class="form-control form-control-sm" placeholder="e.g. Live Production Portal" value="<?= e($urlItem['title']) ?>">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label" style="font-size: 10.5px;">Web URL</label>
+                                                <input type="url" name="project_urls[<?= $idx ?>][url]" class="form-control form-control-sm" placeholder="https://app.example.com" value="<?= e($urlItem['url']) ?>" required>
+                                            </div>
+                                            <div class="col-md-2 d-flex align-items-end justify-content-between pt-3 pt-md-0">
+                                                <div>
+                                                    <div class="text-muted" style="font-size: 9.5px; text-transform: uppercase; font-weight: 600;">Saved Date</div>
+                                                    <span class="badge bg-white text-secondary border px-2 py-1" style="font-size: 11px;">
+                                                        <i data-lucide="calendar" style="width: 11px; height: 11px;" class="me-1"></i> <?= date('d M Y', strtotime($urlItem['created_at'])) ?>
+                                                    </span>
+                                                </div>
+                                                <button type="button" class="btn btn-sm btn-light text-danger btn-remove-url p-1" title="Remove URL" style="height: 32px; width: 32px;">
+                                                    <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <!-- Default initial row if none saved yet -->
+                                <div class="p-3 bg-light rounded-3 border project-url-row position-relative">
+                                    <div class="row g-2 align-items-center">
+                                        <div class="col-md-3">
+                                            <label class="form-label" style="font-size: 10.5px;">Environment Type</label>
+                                            <select name="project_urls[0][type]" class="form-select form-select-sm">
+                                                <option value="Production" selected>Production (Live)</option>
+                                                <option value="Testing">Testing / QA</option>
+                                                <option value="Demo">Demo / Preview</option>
+                                                <option value="Staging">Staging</option>
+                                                <option value="Development">Development</option>
+                                                <option value="Repository">Repository (Git)</option>
+                                                <option value="Figma">Figma / UI Design</option>
+                                                <option value="Documentation">Documentation</option>
+                                                <option value="Other">Other</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label" style="font-size: 10.5px;">Title / Label (Optional)</label>
+                                            <input type="text" name="project_urls[0][title]" class="form-control form-control-sm" placeholder="e.g. Live Production Portal" value="Production">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label" style="font-size: 10.5px;">Web URL</label>
+                                            <input type="url" name="project_urls[0][url]" class="form-control form-control-sm" placeholder="https://app.example.com">
+                                        </div>
+                                        <div class="col-md-2 d-flex align-items-end justify-content-between pt-3 pt-md-0">
+                                            <div>
+                                                <div class="text-muted" style="font-size: 9.5px; text-transform: uppercase; font-weight: 600;">Saved Date</div>
+                                                <span class="badge bg-white text-secondary border px-2 py-1" style="font-size: 11px;">
+                                                    <i data-lucide="calendar" style="width: 11px; height: 11px;" class="me-1"></i> <?= date('d M Y') ?>
+                                                </span>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-light text-danger btn-remove-url p-1" title="Remove URL" style="height: 32px; width: 32px;">
+                                                <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
                     <div class="d-flex justify-content-end gap-2 pt-2">
                         <a href="view.php?id=<?= $id ?>" class="btn btn-light px-4">Cancel</a>
                         <button type="submit" class="btn btn-primary-navy px-4">Update Project</button>
@@ -247,6 +382,162 @@ include __DIR__ . '/../../includes/header.php';
         </div>
     </div>
 </main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+    const estimatedDaysInput = document.getElementById('estimatedDays');
+    const startDatePreview = document.getElementById('startDatePreview');
+    const endDatePreview = document.getElementById('endDatePreview');
+
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    function formatDateHuman(dateStr) {
+        if (!dateStr) return 'Format: Date Month Year';
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+            const y = parts[0];
+            const m = parseInt(parts[1], 10) - 1;
+            const d = parts[2];
+            return `Date Month Year: ${d} ${months[m]} ${y}`;
+        }
+        return 'Format: Date Month Year';
+    }
+
+    function updatePreviews() {
+        if (startDatePreview && startDateInput) {
+            startDatePreview.textContent = formatDateHuman(startDateInput.value);
+        }
+        if (endDatePreview && endDateInput) {
+            endDatePreview.textContent = formatDateHuman(endDateInput.value);
+        }
+    }
+
+    // Auto calculate End Date from Start Date + Estimated Days
+    function calcEndFromDays() {
+        if (!startDateInput.value) return;
+        const days = parseInt(estimatedDaysInput.value, 10);
+        if (!isNaN(days) && days >= 0) {
+            const start = new Date(startDateInput.value + 'T00:00:00');
+            if (!isNaN(start.getTime())) {
+                start.setDate(start.getDate() + days);
+                const yyyy = start.getFullYear();
+                const mm = String(start.getMonth() + 1).padStart(2, '0');
+                const dd = String(start.getDate()).padStart(2, '0');
+                endDateInput.value = `${yyyy}-${mm}-${dd}`;
+                updatePreviews();
+            }
+        }
+    }
+
+    // Auto calculate Estimated Days from End Date - Start Date
+    function calcDaysFromEnd() {
+        if (!startDateInput.value || !endDateInput.value) return;
+        const start = new Date(startDateInput.value + 'T00:00:00');
+        const end = new Date(endDateInput.value + 'T00:00:00');
+        if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end >= start) {
+            const diffDays = Math.round((end - start) / (1000 * 60 * 60 * 24));
+            estimatedDaysInput.value = diffDays;
+            updatePreviews();
+        }
+    }
+
+    if (estimatedDaysInput) {
+        estimatedDaysInput.addEventListener('input', calcEndFromDays);
+        estimatedDaysInput.addEventListener('change', calcEndFromDays);
+    }
+
+    if (startDateInput) {
+        startDateInput.addEventListener('change', function () {
+            calcEndFromDays();
+            updatePreviews();
+        });
+    }
+
+    if (endDateInput) {
+        endDateInput.addEventListener('change', function () {
+            calcDaysFromEnd();
+            updatePreviews();
+        });
+    }
+
+    updatePreviews();
+
+    // -----------------------------------------------------------------
+    // Dynamic Project URLs Repeater
+    // -----------------------------------------------------------------
+    const urlsContainer = document.getElementById('projectUrlsContainer');
+    const btnAddUrlRow = document.getElementById('btnAddUrlRow');
+    let urlRowIndex = <?= max(2, count($existingUrls) + 1) ?>;
+    const todayDateFormatted = '<?= date('d M Y') ?>';
+
+    if (btnAddUrlRow && urlsContainer) {
+        btnAddUrlRow.addEventListener('click', function () {
+            const rowHtml = `
+                <div class="p-3 bg-light rounded-3 border project-url-row position-relative">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-md-3">
+                            <label class="form-label" style="font-size: 10.5px;">Environment Type</label>
+                            <select name="project_urls[${urlRowIndex}][type]" class="form-select form-select-sm">
+                                <option value="Production">Production (Live)</option>
+                                <option value="Testing">Testing / QA</option>
+                                <option value="Demo" selected>Demo / Preview</option>
+                                <option value="Staging">Staging</option>
+                                <option value="Development">Development</option>
+                                <option value="Repository">Repository (Git)</option>
+                                <option value="Figma">Figma / UI Design</option>
+                                <option value="Documentation">Documentation</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" style="font-size: 10.5px;">Title / Label (Optional)</label>
+                            <input type="text" name="project_urls[${urlRowIndex}][title]" class="form-control form-control-sm" placeholder="e.g. Staging Server">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" style="font-size: 10.5px;">Web URL</label>
+                            <input type="url" name="project_urls[${urlRowIndex}][url]" class="form-control form-control-sm" placeholder="https://...">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end justify-content-between pt-3 pt-md-0">
+                            <div>
+                                <div class="text-muted" style="font-size: 9.5px; text-transform: uppercase; font-weight: 600;">Saved Date</div>
+                                <span class="badge bg-white text-secondary border px-2 py-1" style="font-size: 11px;">
+                                    <i data-lucide="calendar" style="width: 11px; height: 11px;" class="me-1"></i> ${todayDateFormatted}
+                                </span>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-light text-danger btn-remove-url p-1" title="Remove URL" style="height: 32px; width: 32px;">
+                                <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            urlsContainer.insertAdjacentHTML('beforeend', rowHtml);
+            urlRowIndex++;
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+
+        // Delegate remove button clicks
+        urlsContainer.addEventListener('click', function (e) {
+            const removeBtn = e.target.closest('.btn-remove-url');
+            if (removeBtn) {
+                const row = removeBtn.closest('.project-url-row');
+                if (row) {
+                    const totalRows = urlsContainer.querySelectorAll('.project-url-row').length;
+                    if (totalRows > 1) {
+                        row.remove();
+                    } else {
+                        row.querySelectorAll('input').forEach(inp => inp.value = '');
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
 
 <?php include __DIR__ . '/../../includes/footer.php'; ?>
 

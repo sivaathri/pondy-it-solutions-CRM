@@ -7,6 +7,7 @@
 SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS activity_logs;
 DROP TABLE IF EXISTS notifications;
+DROP TABLE IF EXISTS project_urls;
 DROP TABLE IF EXISTS project_files;
 DROP TABLE IF EXISTS expenses;
 DROP TABLE IF EXISTS payments;
@@ -238,6 +239,20 @@ CREATE TABLE project_members (
     UNIQUE KEY uq_proj_user (project_id, user_id),
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+-- 10b. PROJECT URLS (PRODUCTION, TESTING, DEMO, ETC.)
+-- --------------------------------------------------------
+CREATE TABLE project_urls (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    project_id INT NOT NULL,
+    url_type ENUM('Production', 'Testing', 'Demo', 'Staging', 'Development', 'Repository', 'Figma', 'Documentation', 'Other') DEFAULT 'Production',
+    title VARCHAR(150) NULL,
+    url VARCHAR(500) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------

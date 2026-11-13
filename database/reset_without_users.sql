@@ -29,6 +29,7 @@ TRUNCATE TABLE task_assignments;
 TRUNCATE TABLE tasks;
 
 -- 5. Reset Projects & Requirements
+TRUNCATE TABLE project_urls;
 TRUNCATE TABLE project_files;
 TRUNCATE TABLE project_requirements;
 TRUNCATE TABLE project_members;
