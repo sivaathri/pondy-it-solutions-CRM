@@ -411,7 +411,7 @@ include __DIR__ . '/../../includes/header.php';
                     <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i> Back to Edit
                 </button>
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-light border px-3" onclick="window.print()" style="border-radius: 12px; font-weight: 600;">
+                    <button type="button" class="btn btn-light border px-3" onclick="printInvoicePreview()" style="border-radius: 12px; font-weight: 600;">
                         <i data-lucide="printer" style="width: 14px; height: 14px;"></i> Print Preview
                     </button>
                     <button type="button" class="btn btn-primary-navy px-4" id="modalConfirmBtn" style="border-radius: 12px; background: #2563EB; font-weight: 600;">
@@ -423,27 +423,45 @@ include __DIR__ . '/../../includes/header.php';
     </div>
 </div>
 
+<div id="printOnlyContainer"></div>
+
 <style>
+#printOnlyContainer {
+    display: none;
+}
+
 @media print {
-    body * {
-        visibility: hidden !important;
+    @page {
+        size: A4 portrait;
+        margin: 10mm 15mm;
     }
-    #modalPrintableArea, #modalPrintableArea * {
-        visibility: visible !important;
-    }
-    #modalPrintableArea {
-        position: absolute !important;
-        left: 0 !important;
-        top: 0 !important;
-        width: 100% !important;
+    html, body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        margin: 0 !important;
         padding: 0 !important;
     }
-    .modal {
-        position: static !important;
+    body > *:not(#printOnlyContainer) {
+        display: none !important;
     }
-    .modal-dialog {
-        max-width: 100% !important;
+    #printOnlyContainer {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        background: #ffffff !important;
+        color: #0f172a !important;
+        padding: 0 !important;
         margin: 0 !important;
+    }
+    .modal, .modal-backdrop {
+        display: none !important;
+    }
+    .no-print {
+        display: none !important;
+    }
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
 }
 </style>
@@ -624,6 +642,20 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('invoiceForm').submit();
         });
     }
+
+    window.printInvoicePreview = function() {
+        let printContainer = document.getElementById('printOnlyContainer');
+        if (!printContainer) {
+            printContainer = document.createElement('div');
+            printContainer.id = 'printOnlyContainer';
+            document.body.appendChild(printContainer);
+        }
+        const printableArea = document.getElementById('modalPrintableArea');
+        if (printableArea) {
+            printContainer.innerHTML = printableArea.innerHTML;
+            window.print();
+        }
+    };
 
     function formatNiceDate(dateStr) {
         if (!dateStr) return '-';
