@@ -152,46 +152,46 @@ include __DIR__ . '/../../includes/header.php';
             </div>
 
             <!-- Items Table -->
-            <div class="table-responsive mb-4">
-                <table class="table table-bordered align-middle">
-                    <thead class="table-light small">
-                        <tr>
-                            <th style="width: 5%;">#</th>
-                            <th style="width: 35%;">Module / Deliverable</th>
-                            <th style="width: 35%;">Description</th>
-                            <th style="width: 8%;" class="text-center">Qty</th>
-                            <th style="width: 17%;" class="text-end">Amount (<?= CURRENCY_SYMBOL ?>)</th>
+            <div class="mb-4">
+                <table class="table quotation-preview-table mb-0" id="quotationViewTable" style="width: 100%; border-collapse: collapse; border: 1.5px solid #cbd5e1;">
+                    <thead>
+                        <tr style="background-color: #092B50; color: #ffffff;">
+                            <th style="width: 6%; text-align: center; padding: 10px 8px; font-size: 11px; font-weight: 700; border: 1px solid #092B50; text-transform: uppercase; letter-spacing: 0.5px;">#</th>
+                            <th style="width: 34%; padding: 10px 12px; font-size: 11px; font-weight: 700; border: 1px solid #092B50; text-transform: uppercase; letter-spacing: 0.5px;">Module / Deliverable</th>
+                            <th style="width: 36%; padding: 10px 12px; font-size: 11px; font-weight: 700; border: 1px solid #092B50; text-transform: uppercase; letter-spacing: 0.5px;">Scope & Description</th>
+                            <th style="width: 8%; text-align: center; padding: 10px 8px; font-size: 11px; font-weight: 700; border: 1px solid #092B50; text-transform: uppercase; letter-spacing: 0.5px;">Qty</th>
+                            <th style="width: 16%; text-align: right; padding: 10px 12px; font-size: 11px; font-weight: 700; border: 1px solid #092B50; text-transform: uppercase; letter-spacing: 0.5px;">Amount (<?= CURRENCY_SYMBOL ?>)</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($items as $idx => $it): ?>
-                            <tr>
-                                <td class="text-secondary small"><?= $idx + 1 ?></td>
-                                <td class="fw-bold text-dark"><?= e($it['module_name']) ?></td>
-                                <td class="small text-secondary"><?= nl2br(e($it['description'])) ?></td>
-                                <td class="text-center small"><?= (float)$it['quantity'] ?></td>
-                                <td class="text-end fw-semibold small"><?= formatCurrency($it['total_price'], false) ?></td>
+                            <tr style="background-color: <?= ($idx % 2 === 1) ? '#f8fafc' : '#ffffff' ?>;">
+                                <td style="text-align: center; padding: 10px 8px; border: 1px solid #cbd5e1; color: #64748b; font-size: 12px; font-weight: 600;"><?= $idx + 1 ?></td>
+                                <td style="padding: 10px 12px; border: 1px solid #cbd5e1; font-weight: 700; color: #092B50; font-size: 13px;"><?= e($it['module_name']) ?></td>
+                                <td style="padding: 10px 12px; border: 1px solid #cbd5e1; color: #475569; font-size: 12px; line-height: 1.4;"><?= nl2br(e($it['description'])) ?></td>
+                                <td style="text-align: center; padding: 10px 8px; border: 1px solid #cbd5e1; color: #334155; font-size: 13px;"><?= (float)$it['quantity'] ?></td>
+                                <td style="text-align: right; padding: 10px 12px; border: 1px solid #cbd5e1; font-weight: 700; color: #0f172a; font-size: 13px;"><?= formatCurrency($it['total_price'], false) ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
-                    <tfoot class="small">
-                        <tr>
-                            <td colspan="4" class="text-end text-muted fw-semibold">Subtotal:</td>
-                            <td class="text-end fw-semibold"><?= formatCurrency($quotation['subtotal']) ?></td>
+                    <tfoot>
+                        <tr style="background-color: #f8fafc;">
+                            <td colspan="4" style="text-align: right; padding: 8px 12px; font-weight: 600; color: #475569; border: 1px solid #cbd5e1; font-size: 13px;">Subtotal:</td>
+                            <td style="text-align: right; padding: 8px 12px; font-weight: 700; color: #0f172a; border: 1px solid #cbd5e1; font-size: 13px;"><?= formatCurrency($quotation['subtotal']) ?></td>
                         </tr>
                         <?php if ($quotation['discount_amount'] > 0): ?>
-                            <tr>
-                                <td colspan="4" class="text-end text-muted">Discount (<?= (float)$quotation['discount_percent'] ?>%):</td>
-                                <td class="text-end text-danger">- <?= formatCurrency($quotation['discount_amount']) ?></td>
+                            <tr style="background-color: #fff1f2;">
+                                <td colspan="4" style="text-align: right; padding: 8px 12px; font-weight: 600; color: #e11d48; border: 1px solid #cbd5e1; font-size: 13px;">Discount (<?= (float)$quotation['discount_percent'] ?>%):</td>
+                                <td style="text-align: right; padding: 8px 12px; font-weight: 700; color: #e11d48; border: 1px solid #cbd5e1; font-size: 13px;">- <?= formatCurrency($quotation['discount_amount']) ?></td>
                             </tr>
                         <?php endif; ?>
-                        <tr>
-                            <td colspan="4" class="text-end text-muted">GST Tax (<?= (float)$quotation['tax_percent'] ?>%):</td>
-                            <td class="text-end"><?= formatCurrency($quotation['tax_amount']) ?></td>
+                        <tr style="background-color: #f8fafc;">
+                            <td colspan="4" style="text-align: right; padding: 8px 12px; font-weight: 600; color: #475569; border: 1px solid #cbd5e1; font-size: 13px;">GST Tax (<?= (float)$quotation['tax_percent'] ?>%):</td>
+                            <td style="text-align: right; padding: 8px 12px; font-weight: 700; color: #0f172a; border: 1px solid #cbd5e1; font-size: 13px;"><?= formatCurrency($quotation['tax_amount']) ?></td>
                         </tr>
-                        <tr class="table-light fs-6">
-                            <td colspan="4" class="text-end fw-bold text-dark">Grand Total:</td>
-                            <td class="text-end fw-bold" style="color: #092B50;"><?= formatCurrency($quotation['total_amount']) ?></td>
+                        <tr style="background-color: #092B50; color: #ffffff;">
+                            <td colspan="4" style="text-align: right; padding: 10px 12px; font-weight: 800; border: 1px solid #092B50; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Grand Total:</td>
+                            <td style="text-align: right; padding: 10px 12px; font-weight: 800; border: 1px solid #092B50; font-size: 15px; color: #ffffff;"><?= formatCurrency($quotation['total_amount']) ?></td>
                         </tr>
                     </tfoot>
                 </table>
@@ -239,16 +239,45 @@ function downloadViewPDF() {
     const filename = '<?= e($quotation['quotation_code']) ?>' + 
         '<?= !empty($quotation['company_name']) ? '_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $quotation['company_name']) : '' ?>.pdf';
 
+    // Create an un-scrolled A4 wrapper (794px width) to completely eliminate top/bottom whitespace & cutoff
+    const wrapper = document.createElement('div');
+    wrapper.id = 'cleanPdfExportWrapper';
+    wrapper.style.position = 'fixed';
+    wrapper.style.top = '0';
+    wrapper.style.left = '-9999px';
+    wrapper.style.width = '794px';
+    wrapper.style.backgroundColor = '#ffffff';
+    wrapper.style.color = '#0f172a';
+    wrapper.style.padding = '25px 30px';
+    wrapper.style.boxSizing = 'border-box';
+    wrapper.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+    wrapper.innerHTML = el.innerHTML;
+    document.body.appendChild(wrapper);
+
+    // Force explicit table width and borders in the export wrapper
+    wrapper.querySelectorAll('table').forEach(t => {
+        t.style.width = '100%';
+        t.style.borderCollapse = 'collapse';
+    });
+
     if (typeof html2pdf !== 'undefined') {
         const opt = {
-            margin:       [10, 10, 10, 10],
+            margin:       [4, 4, 4, 4],
             filename:     filename,
             image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true, logging: false },
+            html2canvas:  { 
+                scale: 2, 
+                scrollY: 0, 
+                scrollX: 0, 
+                windowWidth: 794,
+                useCORS: true, 
+                logging: false 
+            },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
-        html2pdf().set(opt).from(el).save().then(function() {
+        html2pdf().set(opt).from(wrapper).save().then(function() {
+            wrapper.remove();
             if (btn) {
                 btn.innerHTML = origHtml;
                 btn.disabled = false;
@@ -256,6 +285,7 @@ function downloadViewPDF() {
             }
         }).catch(function(err) {
             console.error('PDF error:', err);
+            wrapper.remove();
             if (btn) {
                 btn.innerHTML = origHtml;
                 btn.disabled = false;
@@ -264,6 +294,7 @@ function downloadViewPDF() {
             window.print();
         });
     } else {
+        wrapper.remove();
         if (btn) {
             btn.innerHTML = origHtml;
             btn.disabled = false;

@@ -370,36 +370,36 @@ include __DIR__ . '/../../includes/header.php';
                 </div>
 
                 <!-- Line Items Table -->
-                <div class="table-responsive mb-4">
-                    <table class="table table-bordered align-middle">
-                        <thead class="table-light small">
-                            <tr>
-                                <th style="width: 5%;" class="text-center">#</th>
-                                <th style="width: 32%;">Module / Service</th>
-                                <th style="width: 38%;">Description & Deliverables</th>
-                                <th style="width: 8%;" class="text-center">Qty</th>
-                                <th style="width: 17%;" class="text-end">Amount (<?= CURRENCY_SYMBOL ?>)</th>
+                <div class="mb-4">
+                    <table class="table quotation-preview-table mb-0" id="quotationPreviewTable" style="width: 100%; border-collapse: collapse; border: 1.5px solid #cbd5e1;">
+                        <thead>
+                            <tr style="background-color: #092B50; color: #ffffff;">
+                                <th style="width: 6%; text-align: center; padding: 10px 8px; font-size: 11px; font-weight: 700; border: 1px solid #092B50; text-transform: uppercase; letter-spacing: 0.5px;">#</th>
+                                <th style="width: 34%; padding: 10px 12px; font-size: 11px; font-weight: 700; border: 1px solid #092B50; text-transform: uppercase; letter-spacing: 0.5px;">Module / Deliverable</th>
+                                <th style="width: 36%; padding: 10px 12px; font-size: 11px; font-weight: 700; border: 1px solid #092B50; text-transform: uppercase; letter-spacing: 0.5px;">Scope & Description</th>
+                                <th style="width: 8%; text-align: center; padding: 10px 8px; font-size: 11px; font-weight: 700; border: 1px solid #092B50; text-transform: uppercase; letter-spacing: 0.5px;">Qty</th>
+                                <th style="width: 16%; text-align: right; padding: 10px 12px; font-size: 11px; font-weight: 700; border: 1px solid #092B50; text-transform: uppercase; letter-spacing: 0.5px;">Amount (₹)</th>
                             </tr>
                         </thead>
                         <tbody id="previewItemsTbody">
                             <!-- Dynamic rows injected by JS -->
                         </tbody>
-                        <tfoot class="small">
-                            <tr>
-                                <td colspan="4" class="text-end text-muted fw-semibold">Subtotal:</td>
-                                <td class="text-end fw-semibold" id="previewSubtotal">₹0.00</td>
+                        <tfoot>
+                            <tr style="background-color: #f8fafc;">
+                                <td colspan="4" style="text-align: right; padding: 8px 12px; font-weight: 600; color: #475569; border: 1px solid #cbd5e1; font-size: 13px;">Subtotal:</td>
+                                <td style="text-align: right; padding: 8px 12px; font-weight: 700; color: #0f172a; border: 1px solid #cbd5e1; font-size: 13px;" id="previewSubtotal">₹0.00</td>
                             </tr>
-                            <tr id="previewDiscountRow" style="display: none;">
-                                <td colspan="4" class="text-end text-danger fw-semibold">Discount (<span id="previewDiscountPct">0</span>%):</td>
-                                <td class="text-end text-danger fw-semibold" id="previewDiscountAmt">-₹0.00</td>
+                            <tr id="previewDiscountRow" style="display: none; background-color: #fff1f2;">
+                                <td colspan="4" style="text-align: right; padding: 8px 12px; font-weight: 600; color: #e11d48; border: 1px solid #cbd5e1; font-size: 13px;">Discount (<span id="previewDiscountPct">0</span>%):</td>
+                                <td style="text-align: right; padding: 8px 12px; font-weight: 700; color: #e11d48; border: 1px solid #cbd5e1; font-size: 13px;" id="previewDiscountAmt">-₹0.00</td>
                             </tr>
-                            <tr>
-                                <td colspan="4" class="text-end text-muted fw-semibold">GST Tax (<span id="previewTaxPct">18</span>%):</td>
-                                <td class="text-end fw-semibold" id="previewTaxAmt">₹0.00</td>
+                            <tr style="background-color: #f8fafc;">
+                                <td colspan="4" style="text-align: right; padding: 8px 12px; font-weight: 600; color: #475569; border: 1px solid #cbd5e1; font-size: 13px;">GST Tax (<span id="previewTaxPct">18</span>%):</td>
+                                <td style="text-align: right; padding: 8px 12px; font-weight: 700; color: #0f172a; border: 1px solid #cbd5e1; font-size: 13px;" id="previewTaxAmt">₹0.00</td>
                             </tr>
-                            <tr class="table-light fs-6">
-                                <td colspan="4" class="text-end fw-bold text-dark">Grand Total:</td>
-                                <td class="text-end fw-bold" id="previewGrandTotal" style="color: #092B50;">₹0.00</td>
+                            <tr style="background-color: #092B50; color: #ffffff;">
+                                <td colspan="4" style="text-align: right; padding: 10px 12px; font-weight: 800; border: 1px solid #092B50; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Grand Total:</td>
+                                <td style="text-align: right; padding: 10px 12px; font-weight: 800; border: 1px solid #092B50; font-size: 15px; color: #ffffff;" id="previewGrandTotal">₹0.00</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -589,7 +589,7 @@ document.addEventListener('DOMContentLoaded', function() {
             let subtotal = 0;
             let itemIndex = 1;
 
-            document.querySelectorAll('#itemsTable tbody tr').forEach(r => {
+            document.querySelectorAll('#itemsTable tbody tr').forEach((r, idx) => {
                 const modInput = r.querySelector('input[name="item_module[]"]');
                 const descInput = r.querySelector('input[name="item_desc[]"]');
                 const qtyInput = r.querySelector('.qty-field');
@@ -602,13 +602,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 const lineTot = q * p;
                 subtotal += lineTot;
 
+                const bg = (idx % 2 === 1) ? '#f8fafc' : '#ffffff';
                 const tr = document.createElement('tr');
+                tr.style.backgroundColor = bg;
                 tr.innerHTML = `
-                    <td class="text-center text-muted small">${itemIndex++}</td>
-                    <td class="fw-bold text-dark">${escapeHtml(modName || 'Module')}</td>
-                    <td class="small text-secondary">${escapeHtml(desc || '-')}</td>
-                    <td class="text-center small">${q}</td>
-                    <td class="text-end fw-semibold text-dark">₹${lineTot.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td style="text-align: center; padding: 10px 8px; border: 1px solid #cbd5e1; color: #64748b; font-size: 12px; font-weight: 600;">${itemIndex++}</td>
+                    <td style="padding: 10px 12px; border: 1px solid #cbd5e1; font-weight: 700; color: #092B50; font-size: 13px;">${escapeHtml(modName || 'Module')}</td>
+                    <td style="padding: 10px 12px; border: 1px solid #cbd5e1; color: #475569; font-size: 12px; line-height: 1.4;">${escapeHtml(desc || '-')}</td>
+                    <td style="text-align: center; padding: 10px 8px; border: 1px solid #cbd5e1; color: #334155; font-size: 13px;">${q}</td>
+                    <td style="text-align: right; padding: 10px 12px; border: 1px solid #cbd5e1; font-weight: 700; color: #0f172a; font-size: 13px;">₹${lineTot.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                 `;
                 previewTbody.appendChild(tr);
             });
@@ -740,16 +742,45 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.disabled = true;
         }
 
+        // Create an un-scrolled A4 wrapper (794px width) to completely eliminate top/bottom whitespace & cutoff
+        const wrapper = document.createElement('div');
+        wrapper.id = 'cleanPdfExportWrapper';
+        wrapper.style.position = 'fixed';
+        wrapper.style.top = '0';
+        wrapper.style.left = '-9999px';
+        wrapper.style.width = '794px';
+        wrapper.style.backgroundColor = '#ffffff';
+        wrapper.style.color = '#0f172a';
+        wrapper.style.padding = '25px 30px';
+        wrapper.style.boxSizing = 'border-box';
+        wrapper.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+        wrapper.innerHTML = printableArea.innerHTML;
+        document.body.appendChild(wrapper);
+
+        // Force explicit table width and borders in the export wrapper
+        wrapper.querySelectorAll('table').forEach(t => {
+            t.style.width = '100%';
+            t.style.borderCollapse = 'collapse';
+        });
+
         if (typeof html2pdf !== 'undefined') {
             const opt = {
-                margin:       [10, 10, 10, 10],
+                margin:       [4, 4, 4, 4],
                 filename:     filename,
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true, logging: false },
+                html2canvas:  { 
+                    scale: 2, 
+                    scrollY: 0, 
+                    scrollX: 0, 
+                    windowWidth: 794,
+                    useCORS: true, 
+                    logging: false 
+                },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
-            html2pdf().set(opt).from(printableArea).save().then(function() {
+            html2pdf().set(opt).from(wrapper).save().then(function() {
+                wrapper.remove();
                 if (btn) {
                     btn.innerHTML = originalHtml;
                     btn.disabled = false;
@@ -757,6 +788,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }).catch(function(err) {
                 console.error('PDF generation error:', err);
+                wrapper.remove();
                 if (btn) {
                     btn.innerHTML = originalHtml;
                     btn.disabled = false;
@@ -765,6 +797,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.printQuotationPreview();
             });
         } else {
+            wrapper.remove();
             if (btn) {
                 btn.innerHTML = originalHtml;
                 btn.disabled = false;
