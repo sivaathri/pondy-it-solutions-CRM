@@ -164,16 +164,21 @@ include __DIR__ . '/../../includes/header.php';
                             <select name="client_id" id="clientSelect" class="form-select" required>
                                 <option value="">-- Choose Client --</option>
                                 <?php foreach ($clients as $c): ?>
+                                    <?php
+                                        $compName = $c['company_name'] ? ucwords(trim($c['company_name'])) : '';
+                                        $cliName = $c['client_name'] ? ucwords(trim($c['client_name'])) : '';
+                                        $displayLabel = $compName ? "{$compName} ({$cliName})" : $cliName;
+                                    ?>
                                     <option value="<?= $c['id'] ?>" 
-                                        data-client-name="<?= e($c['client_name']) ?>"
-                                        data-company="<?= e($c['company_name']) ?>"
+                                        data-client-name="<?= e($cliName) ?>"
+                                        data-company="<?= e($compName) ?>"
                                         data-email="<?= e($c['email']) ?>"
                                         data-phone="<?= e($c['phone']) ?>"
                                         data-address="<?= e($c['address']) ?>"
                                         data-city="<?= e($c['city']) ?>"
                                         data-gst="<?= e($c['gst_number']) ?>"
                                         <?= $preClientId === (int)$c['id'] ? 'selected' : '' ?>>
-                                        <?= e($c['company_name'] ? "{$c['company_name']} ({$c['client_name']})" : $c['client_name']) ?>
+                                        <?= e($displayLabel) ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
@@ -496,10 +501,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const selOption = clientSelect.options[clientSelect.selectedIndex];
-            const clientCompany = selOption.dataset.company || selOption.dataset.clientName || 'Client';
-            const clientPerson = selOption.dataset.clientName || '';
+            const rawCompany = selOption.dataset.company || selOption.dataset.clientName || 'Client';
+            const rawPerson = selOption.dataset.clientName || '';
+            const clientCompany = capitalizeWords(rawCompany);
+            const clientPerson = capitalizeWords(rawPerson);
             const clientAddress = selOption.dataset.address || '';
-            const clientCity = selOption.dataset.city || '';
+            const clientCity = capitalizeWords(selOption.dataset.city || '');
             const clientPhone = selOption.dataset.phone || '';
             const clientEmail = selOption.dataset.email || '';
             const clientGst = selOption.dataset.gst || '';
