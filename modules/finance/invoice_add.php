@@ -625,9 +625,9 @@ document.addEventListener('DOMContentLoaded', function() {
             '<title>' + escapeHtml(invCode) + ' - Pondy IT Solutions</title>' +
             '<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">' +
             '<style>' +
-            '@page { size: A4 portrait; margin: 10mm 12mm; } ' +
+            '@page { size: A4 portrait; margin: 0; } ' +
             '* { box-sizing: border-box !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } ' +
-            'html, body { background: #ffffff !important; color: #0f172a !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important; padding: 15px 20px !important; margin: 0 !important; font-size: 13px; line-height: 1.5; } ' +
+            'html, body { background: #ffffff !important; color: #0f172a !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important; padding: 12mm 15mm !important; margin: 0 !important; font-size: 13px; line-height: 1.5; } ' +
             '.badge { display: inline-block; padding: 0.35em 0.65em; font-size: 0.75em; font-weight: 700; line-height: 1; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: 0.375rem; } ' +
             '.bg-primary { background-color: #2563EB !important; color: #ffffff !important; } ' +
             '.bg-light { background-color: #f8fafc !important; } ' +

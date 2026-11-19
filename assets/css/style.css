@@ -1629,6 +1629,15 @@ textarea.form-control {
    PRINT STYLES FOR INVOICE & QUOTATIONS
 -------------------------------------------------------- */
 @media print {
+    @page {
+        size: auto;
+        margin: 0;
+    }
+    body {
+        margin: 0 !important;
+        padding: 10mm 15mm !important;
+        background: #ffffff !important;
+    }
     .app-sidebar, .app-header, .no-print, .btn, .breadcrumb {
         display: none !important;
     }
