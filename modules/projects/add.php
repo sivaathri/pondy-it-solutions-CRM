@@ -195,8 +195,13 @@ include __DIR__ . '/../../includes/header.php';
                             <select name="client_id" class="form-select" required>
                                 <option value="">-- Choose Client --</option>
                                 <?php foreach ($clients as $c): ?>
+                                    <?php
+                                        $compName = $c['company_name'] ? ucwords(trim($c['company_name'])) : '';
+                                        $cliName = $c['client_name'] ? ucwords(trim($c['client_name'])) : '';
+                                        $label = $compName ? "{$compName} ({$cliName})" : $cliName;
+                                    ?>
                                     <option value="<?= $c['id'] ?>" <?= $preClientId === (int)$c['id'] ? 'selected' : '' ?>>
-                                        <?= e($c['company_name'] ? "{$c['company_name']} ({$c['client_name']})" : $c['client_name']) ?>
+                                        <?= e($label) ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>

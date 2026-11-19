@@ -38,14 +38,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Invalid security token.';
     } else {
         $clientCode = trim($_POST['client_code'] ?? $client['client_code']);
-        $clientName = trim($_POST['client_name'] ?? '');
-        $companyName = trim($_POST['company_name'] ?? '');
+        $clientName = ucwords(trim($_POST['client_name'] ?? ''));
+        $companyName = ucwords(trim($_POST['company_name'] ?? ''));
         $email = trim($_POST['email'] ?? '');
         $phone = trim($_POST['phone'] ?? '');
         $altPhone = trim($_POST['alternate_phone'] ?? '');
         $address = trim($_POST['address'] ?? '');
-        $city = trim($_POST['city'] ?? '');
-        $state = trim($_POST['state'] ?? '');
+        $city = ucwords(trim($_POST['city'] ?? ''));
+        $state = ucwords(trim($_POST['state'] ?? ''));
         $country = trim($_POST['country'] ?? '');
         $gstNumber = trim($_POST['gst_number'] ?? '');
         $clientType = trim($_POST['client_type'] ?? 'Company');

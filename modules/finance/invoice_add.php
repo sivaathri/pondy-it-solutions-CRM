@@ -737,6 +737,11 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         return text.replace(/[&<>"']/g, function(m) { return map[m]; });
     }
+
+    function capitalizeWords(str) {
+        if (!str) return '';
+        return str.toString().replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+    }
 });
 </script>
 
