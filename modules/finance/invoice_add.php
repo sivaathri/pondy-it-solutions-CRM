@@ -410,9 +410,12 @@ include __DIR__ . '/../../includes/header.php';
                 <button type="button" class="btn btn-light border px-4" data-bs-dismiss="modal" style="border-radius: 12px; font-weight: 600;">
                     <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i> Back to Edit
                 </button>
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 flex-wrap">
                     <button type="button" class="btn btn-light border px-3" onclick="printInvoicePreview()" style="border-radius: 12px; font-weight: 600;">
                         <i data-lucide="printer" style="width: 14px; height: 14px;"></i> Print Preview
+                    </button>
+                    <button type="button" class="btn btn-light border px-3 text-primary fw-semibold" id="btnDownloadInvoicePdf" onclick="downloadInvoicePDF()" style="border-radius: 12px;">
+                        <i data-lucide="download" style="width: 14px; height: 14px;"></i> Download PDF
                     </button>
                     <button type="button" class="btn btn-primary-navy px-4" id="modalConfirmBtn" style="border-radius: 12px; background: #2563EB; font-weight: 600;">
                         <i data-lucide="check" style="width: 14px; height: 14px;"></i> Confirm & Generate Invoice
@@ -650,6 +653,60 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (iframe) iframe.remove();
             }, 2000);
         }, 350);
+    };
+
+    window.downloadInvoicePDF = function() {
+        const printableArea = document.getElementById('modalPrintableArea');
+        if (!printableArea) return;
+
+        const invCode = (document.getElementById('previewInvoiceCode') ? document.getElementById('previewInvoiceCode').textContent.trim() : '') || 'Invoice';
+        const clientComp = (document.getElementById('previewClientCompany') ? document.getElementById('previewClientCompany').textContent.trim() : '');
+        
+        let filename = invCode;
+        if (clientComp && clientComp !== 'Client Company') {
+            filename += '_' + clientComp.replace(/[^a-zA-Z0-9_-]/g, '_');
+        }
+        filename += '.pdf';
+
+        const btn = document.getElementById('btnDownloadInvoicePdf');
+        let originalHtml = '';
+        if (btn) {
+            originalHtml = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Generating PDF...';
+            btn.disabled = true;
+        }
+
+        if (typeof html2pdf !== 'undefined') {
+            const opt = {
+                margin:       [10, 10, 10, 10],
+                filename:     filename,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, logging: false },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(printableArea).save().then(function() {
+                if (btn) {
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+            }).catch(function(err) {
+                console.error('PDF generation error:', err);
+                if (btn) {
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+                window.printInvoicePreview();
+            });
+        } else {
+            if (btn) {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+            window.printInvoicePreview();
+        }
     };
 
     function formatNiceDate(dateStr) {

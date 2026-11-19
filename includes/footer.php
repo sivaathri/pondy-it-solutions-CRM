@@ -16,6 +16,9 @@
 <!-- Bootstrap 5 Bundle JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
+<!-- HTML2PDF Library (Local) -->
+<script src="<?= getBaseUrl() ?>assets/js/html2pdf.bundle.min.js"></script>
+
 <!-- Global App Script -->
 <script src="<?= getBaseUrl() ?>assets/js/app.js"></script>
 

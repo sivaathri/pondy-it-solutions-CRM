@@ -94,8 +94,11 @@ include __DIR__ . '/../../includes/header.php';
                     </a>
                 <?php endif; ?>
 
+                <button type="button" onclick="downloadViewPDF()" class="btn btn-sm btn-light border text-danger fw-semibold" id="btnDownloadViewPdf">
+                    <i data-lucide="download" style="width: 14px; height: 14px;"></i> Download PDF
+                </button>
                 <button onclick="window.print()" class="btn btn-sm btn-light border">
-                    <i data-lucide="printer" style="width: 14px; height: 14px;"></i> Print / PDF
+                    <i data-lucide="printer" style="width: 14px; height: 14px;"></i> Print
                 </button>
                 <a href="edit.php?id=<?= $id ?>" class="btn btn-sm btn-primary-navy">
                     <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i> Edit
@@ -219,6 +222,56 @@ include __DIR__ . '/../../includes/header.php';
         </div>
     </div>
 </main>
+
+<script>
+function downloadViewPDF() {
+    const el = document.getElementById('printableQuotation');
+    if (!el) return;
+
+    const btn = document.getElementById('btnDownloadViewPdf');
+    let origHtml = '';
+    if (btn) {
+        origHtml = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Generating...';
+        btn.disabled = true;
+    }
+
+    const filename = '<?= e($quotation['quotation_code']) ?>' + 
+        '<?= !empty($quotation['company_name']) ? '_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $quotation['company_name']) : '' ?>.pdf';
+
+    if (typeof html2pdf !== 'undefined') {
+        const opt = {
+            margin:       [10, 10, 10, 10],
+            filename:     filename,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true, logging: false },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdf().set(opt).from(el).save().then(function() {
+            if (btn) {
+                btn.innerHTML = origHtml;
+                btn.disabled = false;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+        }).catch(function(err) {
+            console.error('PDF error:', err);
+            if (btn) {
+                btn.innerHTML = origHtml;
+                btn.disabled = false;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+            window.print();
+        });
+    } else {
+        if (btn) {
+            btn.innerHTML = origHtml;
+            btn.disabled = false;
+        }
+        window.print();
+    }
+}
+</script>
 
 <?php include __DIR__ . '/../../includes/footer.php'; ?>
 
