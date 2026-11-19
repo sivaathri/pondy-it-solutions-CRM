@@ -423,49 +423,6 @@ include __DIR__ . '/../../includes/header.php';
     </div>
 </div>
 
-<div id="printOnlyContainer"></div>
-
-<style>
-#printOnlyContainer {
-    display: none;
-}
-
-@media print {
-    @page {
-        size: A4 portrait;
-        margin: 10mm 15mm;
-    }
-    html, body {
-        background: #ffffff !important;
-        color: #0f172a !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-    body > *:not(#printOnlyContainer) {
-        display: none !important;
-    }
-    #printOnlyContainer {
-        display: block !important;
-        position: static !important;
-        width: 100% !important;
-        background: #ffffff !important;
-        color: #0f172a !important;
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-    .modal, .modal-backdrop {
-        display: none !important;
-    }
-    .no-print {
-        display: none !important;
-    }
-    * {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-    }
-}
-</style>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     function recalc() {
@@ -644,17 +601,55 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     window.printInvoicePreview = function() {
-        let printContainer = document.getElementById('printOnlyContainer');
-        if (!printContainer) {
-            printContainer = document.createElement('div');
-            printContainer.id = 'printOnlyContainer';
-            document.body.appendChild(printContainer);
-        }
         const printableArea = document.getElementById('modalPrintableArea');
-        if (printableArea) {
-            printContainer.innerHTML = printableArea.innerHTML;
-            window.print();
-        }
+        if (!printableArea) return;
+
+        let iframe = document.getElementById('invoicePrintFrame');
+        if (iframe) iframe.remove();
+
+        iframe = document.createElement('iframe');
+        iframe.id = 'invoicePrintFrame';
+        iframe.style.position = 'fixed';
+        iframe.style.top = '-9999px';
+        iframe.style.left = '-9999px';
+        iframe.style.width = '1024px';
+        iframe.style.height = '1400px';
+        iframe.style.border = 'none';
+        document.body.appendChild(iframe);
+
+        const invCode = (document.getElementById('previewInvoiceCode') ? document.getElementById('previewInvoiceCode').textContent.trim() : '') || 'Invoice';
+        const doc = iframe.contentWindow.document;
+        doc.open();
+        doc.write('<!DOCTYPE html>' +
+            '<html><head><meta charset="utf-8">' +
+            '<title>' + escapeHtml(invCode) + ' - Pondy IT Solutions</title>' +
+            '<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">' +
+            '<style>' +
+            '@page { size: A4 portrait; margin: 10mm 12mm; } ' +
+            '* { box-sizing: border-box !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } ' +
+            'html, body { background: #ffffff !important; color: #0f172a !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important; padding: 15px 20px !important; margin: 0 !important; font-size: 13px; line-height: 1.5; } ' +
+            '.badge { display: inline-block; padding: 0.35em 0.65em; font-size: 0.75em; font-weight: 700; line-height: 1; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: 0.375rem; } ' +
+            '.bg-primary { background-color: #2563EB !important; color: #ffffff !important; } ' +
+            '.bg-light { background-color: #f8fafc !important; } ' +
+            '.table { width: 100%; margin-bottom: 1rem; vertical-align: middle; border-color: #dee2e6; } ' +
+            '.table-bordered { border: 1px solid #dee2e6; } ' +
+            '.table-bordered th, .table-bordered td { border: 1px solid #dee2e6; padding: 0.45rem 0.6rem; font-size: 0.85rem; } ' +
+            '.table-light { background-color: #f8fafc !important; } ' +
+            'img { max-height: 48px; width: auto; } ' +
+            '</style>' +
+            '</head><body>' +
+            printableArea.innerHTML +
+            '</body></html>'
+        );
+        doc.close();
+
+        setTimeout(function() {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+            setTimeout(function() {
+                if (iframe) iframe.remove();
+            }, 2000);
+        }, 350);
     };
 
     function formatNiceDate(dateStr) {
