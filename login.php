@@ -105,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <span class="input-group-text bg-light border-end-0 text-muted">
                     <i data-lucide="user" style="width: 16px; height: 16px;"></i>
                 </span>
-                <input type="text" name="username" class="form-control border-start-0" placeholder="e.g. admin or siva@pondyit.com" required value="<?= e($_POST['username'] ?? 'admin') ?>">
+                <input type="text" name="username" class="form-control border-start-0" placeholder="e.g. admin or siva@pondyit.com" required value="<?= e($_POST['username'] ?? '') ?>" autocomplete="username">
             </div>
         </div>
 
@@ -115,25 +115,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <span class="input-group-text bg-light border-end-0 text-muted">
                     <i data-lucide="lock" style="width: 16px; height: 16px;"></i>
                 </span>
-                <input type="password" name="password" class="form-control border-start-0" placeholder="Enter password" required value="admin123">
+                <input type="password" name="password" class="form-control border-start-0" placeholder="Enter password" required value="" autocomplete="current-password">
             </div>
         </div>
 
         <div class="d-flex align-items-center justify-content-between mb-4">
             <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="rememberMe" checked>
+                <input class="form-check-input" type="checkbox" id="rememberMe">
                 <label class="form-check-label small text-muted" for="rememberMe">Remember me</label>
             </div>
             <a href="#" class="small text-decoration-none" onclick="alert('Please contact your Super Admin (admin@pondyit.com) to reset your password.'); return false;">Forgot password?</a>
         </div>
 
-        <div class="d-grid mb-3">
+        <div class="d-grid mb-2">
             <button type="submit" class="btn btn-primary-navy py-2 fw-semibold">Sign In to Dashboard</button>
-        </div>
-
-        <div class="p-3 bg-light rounded-3 border text-center small text-muted">
-            <span class="fw-semibold text-dark">Demo Access:</span> <code>admin</code> / <code>admin123</code><br>
-            <span class="text-secondary" style="font-size: 0.72rem;">Roles: Admin, Project Manager, Developer, QA</span>
         </div>
     </form>
 </div>
